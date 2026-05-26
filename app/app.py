@@ -229,7 +229,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### Spesifikasi Teknis")
 
-    max_price   = st.slider("Budget Maksimal ($)", 5000, 500000, 40000, 5000)
+    max_price   = st.slider("Budget Maksimal ($)", 5000, 2500000, 40000, 5000)
     horsepower  = st.slider("Tenaga (HP)", 50, 800, 200, 10)
     city_mpg    = st.slider("Konsumsi BBM Kota (mpg)", 10, 60, 25, 1)
     cylinders   = st.slider("Jumlah Silinder", 0, 12, 4, 1)
@@ -730,10 +730,10 @@ with tab4:
 
         ### Model ML yang Digunakan
 
-        | Model | Tugas | Metrik |
+        | Model / Teknik | Tugas | Metrik |
         |---|---|---|
         | **Random Forest Classifier** | Prediksi merk mobil terbaik | F1-Score |
-        | **Gradient Boosting Classifier** | Model klasifikasi pembanding | F1-Score |
+        | **SMOTE (Oversampling)** | Menyeimbangkan dominasi kelas (Sedan/SUV) di dataset | - |
         | **Random Forest Regressor** | Estimasi harga mobil sesuai spesifikasi | R², MAE, RMSE |
         | **KNN (cosine similarity)** | Sistem rekomendasi berbasis kemiripan | Cosine similarity |
 
