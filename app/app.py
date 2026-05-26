@@ -229,7 +229,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### Spesifikasi Teknis")
 
-    max_price   = st.slider("Budget Maksimal ($)", 2000, 2500000, 40000, 1000)
+    max_price   = st.number_input("Budget Maksimal ($)", min_value=2000, max_value=2500000, value=40000, step=1000)
     horsepower  = st.slider("Tenaga (HP)", 50, 1050, 200, 10)
     city_mpg    = st.slider("Konsumsi BBM Kota (mpg)", 5, 140, 25, 1)
     cylinders   = st.slider("Jumlah Silinder", 0, 16, 4, 1)
