@@ -229,10 +229,10 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### Spesifikasi Teknis")
 
-    max_price   = st.slider("Budget Maksimal ($)", 5000, 2500000, 40000, 5000)
-    horsepower  = st.slider("Tenaga (HP)", 50, 800, 200, 10)
-    city_mpg    = st.slider("Konsumsi BBM Kota (mpg)", 10, 60, 25, 1)
-    cylinders   = st.slider("Jumlah Silinder", 0, 12, 4, 1)
+    max_price   = st.slider("Budget Maksimal ($)", 2000, 2500000, 40000, 1000)
+    horsepower  = st.slider("Tenaga (HP)", 50, 1050, 200, 10)
+    city_mpg    = st.slider("Konsumsi BBM Kota (mpg)", 5, 140, 25, 1)
+    cylinders   = st.slider("Jumlah Silinder", 0, 16, 4, 1)
 
     st.markdown("---")
     recommend_btn = st.button("Cari Rekomendasi", key="rec_btn")
