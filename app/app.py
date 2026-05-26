@@ -184,7 +184,7 @@ def price_badge(segment: str) -> str:
 st.markdown("""
 <div class="main-header">
     <h1>AUTO MATCH</h1>
-    <p>Sistem Rekomendasi Mobil Cerdas &nbsp;·&nbsp; Edmunds/Kaggle Dataset &nbsp;·&nbsp; Machine Learning</p>
+    <p>Sistem Rekomendasi Mobil Cerdas &nbsp;·&nbsp; Kaggle Dataset &nbsp;·&nbsp; Machine Learning</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -229,7 +229,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### Spesifikasi Teknis")
 
-    max_price   = st.slider("Budget Maksimal ($)", 5000, 150000, 40000, 5000)
+    max_price   = st.slider("Budget Maksimal ($)", 5000, 500000, 40000, 5000)
     horsepower  = st.slider("Tenaga (HP)", 50, 800, 200, 10)
     city_mpg    = st.slider("Konsumsi BBM Kota (mpg)", 10, 60, 25, 1)
     cylinders   = st.slider("Jumlah Silinder", 0, 12, 4, 1)
