@@ -200,7 +200,7 @@ with st.sidebar:
             with st.spinner("Melatih model... (~30 detik)"):
                 import subprocess
                 res = subprocess.run(
-                    ["python", os.path.join(ROOT, "src", "train_model.py")],
+                    [sys.executable, os.path.join(ROOT, "src", "train_model.py")],
                     capture_output=True, text=True, cwd=ROOT
                 )
                 if res.returncode == 0:
