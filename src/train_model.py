@@ -17,7 +17,6 @@ from sklearn.ensemble import (
 )
 from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import cross_val_score, train_test_split
-from imblearn.over_sampling import SMOTE
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from data_loader import (
@@ -34,27 +33,47 @@ def _safe_cv(y_train: np.ndarray, max_cv: int = 5) -> int:
     return max(2, min(max_cv, int(counts.min())))
 
 
+def _random_oversample(X: np.ndarray, y: np.ndarray, random_state: int = 42) -> tuple:
+    """Oversampling sederhana berbasis numpy — tanpa library eksternal.
+    Duplikasi sampel dari kelas minoritas hingga setiap kelas memiliki
+    jumlah sampel yang sama dengan kelas mayoritas.
+    """
+    rng = np.random.RandomState(random_state)
+    classes, counts = np.unique(y, return_counts=True)
+    max_count = counts.max()
+    X_parts, y_parts = [X], [y]
+    for cls, cnt in zip(classes, counts):
+        deficit = max_count - cnt
+        if deficit > 0:
+            idx = np.where(y == cls)[0]
+            chosen = rng.choice(idx, size=deficit, replace=True)
+            X_parts.append(X[chosen])
+            y_parts.append(y[chosen])
+    return np.vstack(X_parts), np.concatenate(y_parts)
+
+
 def train_brand_classifier(X_train, y_train, cv: int = 5):
-    """Train Random Forest Classifier untuk prediksi merk mobil dengan SMOTE."""
+    """Train Random Forest Classifier untuk prediksi merk mobil.
+    Menggunakan random oversampling (numpy) untuk mengatasi class imbalance
+    tanpa bergantung pada library eksternal seperti imbalanced-learn.
+    """
     print("\n[TRAIN] Random Forest Classifier (prediksi merk)...")
     X_arr = np.asarray(X_train, dtype=float)
     y_arr = np.asarray(y_train, dtype=str)
-    
-    # ─── Menerapkan SMOTE dengan aman ──────────────────────────────────────────
+
+    # ─── Oversampling berbasis numpy (tanpa imblearn) ──────────────────────────
     counts = np.unique(y_arr, return_counts=True)[1]
     min_samples = counts.min()
-    
+
     if min_samples > 1:
-        k_neighbors = min(5, min_samples - 1)
-        print(f"[SMOTE] Menerapkan SMOTE (k_neighbors={k_neighbors}) untuk mengatasi data imbalance...")
-        smote = SMOTE(k_neighbors=k_neighbors, random_state=42)
-        X_res, y_res = smote.fit_resample(X_arr, y_arr)
-        print(f"        Ukuran data sebelum SMOTE : {len(X_arr)}")
-        print(f"        Ukuran data sesudah SMOTE : {len(X_res)}")
+        print(f"[OVERSAMPLE] Menerapkan random oversampling untuk mengatasi data imbalance...")
+        X_res, y_res = _random_oversample(X_arr, y_arr, random_state=42)
+        print(f"             Ukuran data sebelum oversampling : {len(X_arr)}")
+        print(f"             Ukuran data sesudah oversampling : {len(X_res)}")
     else:
-        print("[WARN] SMOTE dilewati karena ada kelas dengan <2 sampel di data training.")
+        print("[WARN] Oversampling dilewati karena ada kelas dengan <2 sampel di data training.")
         X_res, y_res = X_arr, y_arr
-        
+
     safe  = _safe_cv(y_res, cv)
 
     model = RandomForestClassifier(
