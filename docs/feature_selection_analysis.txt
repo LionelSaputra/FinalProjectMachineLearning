@@ -1,0 +1,181 @@
+================================================================================
+  ANALISIS PEMILIHAN FITUR — Car Recommendation System
+  Berdasarkan Correlation Matrix (EDA)
+================================================================================
+
+Dataset  : Edmunds / Kaggle Car Features & MSRP
+           (https://raw.githubusercontent.com/alexeygrigorev/mlbookcamp-code/
+            master/chapter-02-car-price/data.csv)
+Tanggal  : 2026-06-04
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. LATAR BELAKANG
+────────────────────────────────────────────────────────────────────────────────
+
+Sebelum melatih model Machine Learning, dilakukan Exploratory Data Analysis
+(EDA) untuk memahami hubungan antar fitur numerik melalui Correlation Matrix.
+
+Correlation Matrix yang ditampilkan di Tab "Eksplorasi Data" pada aplikasi
+Streamlit mencakup kolom:
+  year, horsepower, cylinders, num-of-doors,
+  highway-mpg, city-mpg, popularity, price
+
+Berikut adalah temuan utama dan keputusan yang diambil.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. TEMUAN: PASANGAN FITUR BERKORELASI TINGGI
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌─────────────────────┬────────────────────┬────────────┐
+  │ Fitur A             │ Fitur B            │ |Korelasi| │
+  ├─────────────────────┼────────────────────┼────────────┤
+  │ city-mpg            │ highway-mpg        │   ~0.89    │  ← Sangat tinggi
+  │ horsepower          │ cylinders          │   ~0.78    │  ← Tinggi
+  │ horsepower          │ price              │   ~0.64    │  ← Sedang
+  └─────────────────────┴────────────────────┴────────────┘
+
+Threshold multikolinearitas yang digunakan: |r| >= 0.70
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. KEPUTUSAN PEMILIHAN FITUR
+────────────────────────────────────────────────────────────────────────────────
+
+[A] highway-mpg — DIHAPUS dari fitur model
+─────────────────────────────────────────────
+  Masalah  : Multikolinearitas dengan city-mpg (r ≈ 0.89)
+
+  Penjelasan:
+    - Baik city-mpg maupun highway-mpg sama-sama mengukur efisiensi
+      bahan bakar, hanya berbeda kondisi jalan (kota vs jalan raya).
+    - Keduanya membawa informasi yang hampir identik ke dalam model.
+
+  Dampak jika keduanya dipertahankan:
+    • KNN Recommender (cosine similarity):
+        Dimensi MPG akan dihitung DUA KALI dalam ruang fitur.
+        Akibatnya, jarak antar mobil akan didominasi oleh kemiripan
+        MPG, sementara fitur lain (horsepower, body-style, dll.)
+        menjadi kurang berpengaruh. Rekomendasi menjadi bias terhadap
+        mobil yang hemat BBM meskipun preferensi pengguna berbeda.
+
+    • Random Forest Classifier:
+        Feature importance akan TERBAGI secara buatan antara city-mpg
+        dan highway-mpg, padahal keduanya mewakili hal yang sama.
+        Hal ini mempersulit interpretasi model dan mengaburkan
+        kontribusi fitur yang benar-benar penting.
+
+    • StandardScaler:
+        Kedua fitur di-scale secara terpisah, sehingga bobot efektif
+        dimensi MPG dalam ruang fitur menjadi dua kali lipat
+        dibandingkan fitur lain.
+
+  Keputusan:
+    Hanya 'city-mpg' yang digunakan sebagai fitur input model.
+    'highway-mpg' TETAP ADA di dataset untuk keperluan:
+      - Ditampilkan di kartu detail rekomendasi (UI)
+      - Digunakan sebagai estimasi highway-mpg di Tab Rekomendasi
+        (dihitung sebagai city-mpg × 1.35 — estimasi logis)
+      - Tersedia untuk analisis EDA di Tab Eksplorasi Data
+
+
+[B] horsepower & cylinders — TETAP DIPERTAHANKAN (keduanya)
+─────────────────────────────────────────────────────────────
+  Korelasi : r ≈ 0.78 (tinggi, namun masih dapat diterima)
+
+  Penjelasan:
+    Meskipun korelasinya cukup tinggi, kedua fitur ini secara SEMANTIK
+    mewakili dimensi yang BERBEDA:
+
+      • horsepower  = output tenaga aktual yang dihasilkan mesin (HP)
+                      → menentukan performa/kecepatan mobil
+      • cylinders   = jumlah silinder / konfigurasi fisik mesin
+                      → menentukan ukuran dan karakteristik mesin
+
+    Dari sudut pandang pengguna (user preference):
+      - Pengguna mungkin ingin mobil dengan tenaga tinggi (500+ HP)
+        namun tidak selalu peduli dengan jumlah silindernya (V6 vs V8).
+      - Sebaliknya, pengguna yang mencari "mesin 4 silinder" belum
+        tentu mengutamakan horsepower tertentu.
+
+    Dari sudut pandang model:
+      - Random Forest cukup robust terhadap multikolinearitas moderat
+        karena setiap pohon hanya menggunakan subset fitur secara acak.
+      - KNN: r=0.78 masih dapat diterima karena keduanya memang
+        berkaitan (mesin besar → lebih bertenaga).
+
+  Keputusan:
+    Keduanya TETAP dipertahankan sebagai fitur input model.
+
+
+[C] popularity — DIHAPUS dari fitur model
+───────────────────────────────────────────
+  Masalah  : Target Leakage (Kebocoran Data)
+
+  Penjelasan:
+    Kolom 'popularity' di dataset ini nilainya KONSTAN per merk (make).
+    Artinya, semua mobil dari merk yang sama memiliki nilai popularity
+    yang persis identik.
+
+    Contoh:
+      Ford Focus (2015)  → popularity = 5657
+      Ford Mustang (2016) → popularity = 5657   ← nilai sama!
+      BMW 3 Series (2017) → popularity = 3916
+      BMW X5 (2015)       → popularity = 3916   ← nilai sama!
+
+    Jika popularity digunakan sebagai fitur, model akan "mengingat"
+    bahwa nilai popularity tertentu = merk tertentu, sehingga:
+      - Akurasi training/test menjadi 99%+ (PALSU)
+      - Model tidak belajar dari spesifikasi teknis mobil sama sekali
+      - Model tidak dapat melakukan generalisasi
+
+  Keputusan:
+    'popularity' DIKELUARKAN dari fitur model.
+    Kolom ini tidak digunakan untuk training maupun prediksi.
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. FITUR FINAL YANG DIGUNAKAN MODEL ML
+────────────────────────────────────────────────────────────────────────────────
+
+  Fitur Numerik (NUMERIC_FEATURES):
+    1. year          — Tahun produksi mobil
+    2. horsepower    — Tenaga mesin (HP)
+    3. cylinders     — Jumlah silinder mesin
+    4. num-of-doors  — Jumlah pintu
+    5. city-mpg      — Konsumsi BBM kota (mewakili efisiensi)
+
+  Fitur Kategorik (CAT_FEATURES, di-encode One-Hot):
+    6. fuel-type     — Jenis bahan bakar (gas, diesel, electric, ...)
+    7. transmission  — Tipe transmisi (AUTOMATIC, MANUAL, ...)
+    8. drive-wheels  — Penggerak roda (fwd, rwd, awd, 4wd)
+    9. vehicle-size  — Ukuran kendaraan (Compact, Midsize, Large)
+   10. body-style    — Tipe bodi (sedan, suv, coupe, pickup, ...)
+
+  Target Klasifikasi:
+    → make (merk mobil) — diprediksi oleh Random Forest Classifier
+
+  Target Regresi:
+    → price (MSRP) — diprediksi oleh Random Forest Regressor
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. RINGKASAN
+────────────────────────────────────────────────────────────────────────────────
+
+  Fitur yang DIKELUARKAN dari model:
+    ✗ highway-mpg  → multikolinearitas dengan city-mpg (r ≈ 0.89)
+    ✗ popularity   → target leakage (nilai konstan per merk)
+
+  Fitur yang TETAP digunakan:
+    ✓ year, horsepower, cylinders, num-of-doors, city-mpg
+    ✓ fuel-type, transmission, drive-wheels, vehicle-size, body-style
+
+  Keputusan ini diimplementasikan di:
+    src/data_loader.py → konstanta NUMERIC_FEATURES dan CAT_FEATURES
+
+
+================================================================================
+  End of Document
+================================================================================
