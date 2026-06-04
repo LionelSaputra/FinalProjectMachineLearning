@@ -167,23 +167,28 @@ print("="*60)
 print("""
 Berdasarkan correlation heatmap di atas:
 
-  📌 city-mpg  ↔ highway-mpg  : korelasi ~0.89 (sangat tinggi)
-     → Keduanya mengukur efisiensi bahan bakar di kondisi yang berbeda.
-     → KEPUTUSAN: Hanya 'city-mpg' yang dipertahankan sebagai fitur model.
-       'highway-mpg' TIDAK dimasukkan ke NUMERIC_FEATURES (model)
-       karena redundan, namun tetap tersedia di dataset untuk display.
+  ⛔ highway-mpg  (DIHAPUS dari fitur model)
+     → Korelasi dengan city-mpg = ~0.89 (sangat tinggi / multikolinearitas)
+     → Kedua fitur mengukur hal yang sama (efisiensi BBM).
+     → Dampak jika keduanya dipakai:
+         • KNN: dimensi MPG dihitung 2x → distorsi jarak cosine
+         • Random Forest: feature importance terbagi secara buatan
+     → KEPUTUSAN: Hanya 'city-mpg' yang digunakan. 'highway-mpg' tetap
+       tersedia di dataset untuk keperluan display/filter UI.
 
-  📌 horsepower ↔ cylinders   : korelasi ~0.78 (tinggi)
-     → Keduanya berkaitan dengan kapasitas mesin.
-     → KEPUTUSAN: Keduanya TETAP dipertahankan karena secara semantik
-       mewakili dimensi berbeda (tenaga vs konfigurasi mesin) dan
-       keduanya penting sebagai preferensi pengguna.
+  ⚠️  horsepower ↔ cylinders   (r ≈ 0.78, TETAP DIPERTAHANKAN)
+     → Secara semantik mewakili dimensi berbeda:
+         • horsepower = output tenaga aktual mesin
+         • cylinders  = konfigurasi/kapasitas mesin
+     → Keduanya penting sebagai parameter preferensi pengguna.
+     → r=0.78 tinggi tapi masih dapat diterima untuk kasus ini.
 
-  📌 popularity                : nilai konstan per merk (make)
-     → Menyebabkan TARGET LEAKAGE — model akan "menipu" dengan accuracy 99%+.
-     → KEPUTUSAN: 'popularity' DIKELUARKAN dari fitur model.
+  ⛔ popularity  (DIHAPUS dari fitur model)
+     → Nilainya konstan per merk (make) → TARGET LEAKAGE
+     → Jika dipakai, model akan "menghafal" merk dari popularitas
+       bukan dari spesifikasi teknis → akurasi palsu 99%+.
 
-  ✅ Fitur numerik final untuk model:
+  ✅ Fitur numerik FINAL yang digunakan model:
      {feats}
 """.format(feats=NUMERIC_FEATURES))
 

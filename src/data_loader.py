@@ -38,12 +38,17 @@ DATA_URL = "https://raw.githubusercontent.com/alexeygrigorev/mlbookcamp-code/mas
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 LOCAL_FILE = os.path.join(DATA_DIR, "car_features_msrp.csv")
 
-# ─── Fitur numerik untuk model ML ──────────────────────────────────────────────
-# 'popularity' tidak dimasukkan sebagai fitur untuk training karena nilainya konstan per merk (make)
-# dan menyebabkan target leakage (kebocoran data) yang membuat akurasi model 99%+.
+# ─── Fitur numerik untuk model ML ───────────────────────────────────────────────
+# Fitur yang dikeluarkan (tidak digunakan sebagai input model):
+#   - 'popularity'  : nilainya konstan per merk (make) → TARGET LEAKAGE (akurasi palsu 99%+)
+#   - 'highway-mpg' : korelasi sangat tinggi dengan 'city-mpg' (r ≈ 0.89) → MULTIKOLINEARITAS
+#                     Kedua fitur mengukur hal yang sama (efisiensi BBM).
+#                     Mempertahankan keduanya akan mendistorsi jarak KNN (dimensi MPG
+#                     dihitung 2x) dan membagi feature importance RF secara buatan.
+#                     Kolom ini tetap ada di dataset untuk keperluan display/filter UI.
 NUMERIC_FEATURES = [
     "year", "horsepower", "cylinders", "num-of-doors",
-    "city-mpg", "highway-mpg"
+    "city-mpg"
 ]
 
 # ─── Fitur kategorikal (untuk encoding) ────────────────────────────────────────
