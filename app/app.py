@@ -697,19 +697,79 @@ with tab3:
     )
     st.plotly_chart(fig_sc, use_container_width=True)
 
-    # Correlation
+    # ── Correlation Heatmap ──────────────────────────────────────────────────
     st.markdown("#### Korelasi Fitur Numerik")
-    num_df = df_raw[NUMERIC_FEATURES].copy()
+
+    # Gunakan semua fitur numerik relevan (termasuk highway-mpg & popularity)
+    ALL_NUM_COLS = ["year", "horsepower", "cylinders", "num-of-doors",
+                    "highway-mpg", "city-mpg", "popularity", "price"]
+    num_df = df_raw[[c for c in ALL_NUM_COLS if c in df_raw.columns]].copy()
     corr   = num_df.corr(numeric_only=True)
+
+    # Warna diverging: merah negatif, putih 0, biru positif
+    corr_scale = [
+        [0.00, "#b91c1c"], [0.25, "#7f1d1d"],
+        [0.50, "#1a1a2e"],
+        [0.75, "#1e3a5f"], [1.00, "#2563eb"]
+    ]
     fig_corr = px.imshow(
         corr, text_auto=".2f",
-        color_continuous_scale=[[0,"#0f0c29"],[0.5,"#302b63"],[1,"#a78bfa"]],
-        title="Heatmap Korelasi"
+        color_continuous_scale=corr_scale,
+        zmin=-1, zmax=1,
+        title="Correlation Matrix of Numerical Features"
     )
     fig_corr.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc", height=520
+        paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc",
+        height=560, title_font_size=14
     )
+    fig_corr.update_traces(textfont=dict(size=11))
     st.plotly_chart(fig_corr, use_container_width=True)
+
+    # ── Analisis pasangan berkorelasi tinggi ─────────────────────────────────
+    st.markdown("##### Analisis Multikolinearitas — Pasangan Fitur Berkorelasi Tinggi")
+    cols_list = list(corr.columns)
+    high_pairs = []
+    for i, r in enumerate(cols_list):
+        for j, c in enumerate(cols_list):
+            if i < j:
+                v = abs(corr.loc[r, c])
+                if v >= 0.70:
+                    high_pairs.append({"Fitur A": r, "Fitur B": c, "|Korelasi|": round(v, 3)})
+
+    if high_pairs:
+        hp_df = pd.DataFrame(high_pairs).sort_values("|Korelasi|", ascending=False)
+        st.dataframe(
+            hp_df.style.background_gradient(subset=["|Korelasi|"], cmap="RdYlGn_r"),
+            use_container_width=True, hide_index=True
+        )
+    else:
+        st.info("Tidak ada pasangan fitur dengan |korelasi| ≥ 0.70")
+
+    # ── Info card pemilihan fitur ─────────────────────────────────────────────
+    st.markdown("")
+    col_info1, col_info2 = st.columns(2)
+    with col_info1:
+        st.error("""
+**⛔ Fitur yang DIKELUARKAN dari model:**
+
+- **`highway-mpg`** — Korelasi sangat tinggi dengan `city-mpg` (~0.89).
+  Redundan karena mengukur hal yang sama (efisiensi BBM).
+  Tetap tersedia di dataset untuk tampilan/filter.
+
+- **`popularity`** — Nilai konstan per merk (make).
+  Menyebabkan *target leakage* → akurasi model palsu 99%+.
+        """)
+    with col_info2:
+        st.success("""
+**✅ Fitur INPUT yang digunakan model:**
+
+- **`year`** — Tahun produksi
+- **`horsepower`** — Tenaga mesin (HP)
+- **`cylinders`** — Jumlah silinder mesin
+- **`num-of-doors`** — Jumlah pintu
+- **`city-mpg`** — Konsumsi BBM kota (mewakili efisiensi)
+- **+ Fitur kategorik** (body-style, fuel-type, transmission, drive-wheels, vehicle-size)
+        """)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
