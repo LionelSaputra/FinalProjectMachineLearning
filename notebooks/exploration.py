@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 exploration.py — Car Recommendation System EDA
 ================================================
@@ -22,6 +23,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # Non-interactive backend — plot disimpan ke file, tidak blocking
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.cm as cm

@@ -120,17 +120,14 @@ def get_recommendations(
     input_vec    = _encode_input(user_prefs, df_labeled, one_hot_cols)
     input_scaled = scaler.transform(input_vec)
 
-    # ── 2. Prediksi merk & harga (opsional) ──────────────────────────────────
+    # ── 2. Prediksi merk & harga (opsional) ──────────────────────────────
     pred_make  = None
     pred_price = None
-    brand_boost_map = {}
 
     if classifier is not None:
         pred_make  = classifier.predict(input_scaled)[0]
         pred_proba = classifier.predict_proba(input_scaled)[0]
         classes    = classifier.classes_
-        for cls, prob in zip(classes, pred_proba):
-            brand_boost_map[cls.lower()] = float(prob)
         print(f"\n[PREDICT] Merk terbaik untuk preferensi Anda: {pred_make.upper()}")
         print("  Probabilitas top-5 merk:")
         top5_idx = np.argsort(pred_proba)[::-1][:5]

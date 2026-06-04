@@ -258,9 +258,10 @@ with tab1:
     prefs = {
         "horsepower":  float(horsepower),
         "city-mpg":    float(city_mpg),
-        "highway-mpg": float(city_mpg) * 1.35, # Estimasi logis konsumsi jalan raya
         "cylinders":   float(cylinders),
         "price":       float(max_price),
+        # highway-mpg TIDAK dimasukkan ke prefs — sudah dihapus dari NUMERIC_FEATURES
+        # karena multikolinearitas tinggi dengan city-mpg (r ≈ 0.89)
     }
     if body_style != "(Semua)":
         prefs["body-style"] = body_style
@@ -459,7 +460,9 @@ with tab1:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("#### Radar — Preferensi vs Rekomendasi #1")
 
-    radar_feats = ["horsepower", "city-mpg", "highway-mpg", "cylinders", "popularity"]
+    # Gunakan hanya fitur yang benar-benar digunakan model (NUMERIC_FEATURES)
+    # highway-mpg & popularity sudah dikeluarkan (multikolinearitas & target leakage)
+    radar_feats = ["horsepower", "city-mpg", "cylinders", "year", "num-of-doors"]
 
     def norm_val(col, val):
         lo, hi = df_enc[col].min(), df_enc[col].max()
@@ -793,7 +796,7 @@ with tab4:
         | Model / Teknik | Tugas | Metrik |
         |---|---|---|
         | **Random Forest Classifier** | Prediksi merk mobil terbaik | F1-Score |
-        | **SMOTE (Oversampling)** | Menyeimbangkan dominasi kelas (Sedan/SUV) di dataset | - |
+        | **Random Oversampling (NumPy)** | Menyeimbangkan class imbalance tanpa library eksternal | - |
         | **Random Forest Regressor** | Estimasi harga mobil sesuai spesifikasi | R², MAE, RMSE |
         | **KNN (cosine similarity)** | Sistem rekomendasi berbasis kemiripan | Cosine similarity |
 
