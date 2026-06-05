@@ -33,26 +33,22 @@ def _safe_cv(y_train: np.ndarray, max_cv: int = 5) -> int:
     return max(2, min(max_cv, int(counts.min())))
 
 
-def _random_oversample(X: np.ndarray, y: np.ndarray, random_state: int = 42,
-                       max_total: int = 10000) -> tuple:
+def _random_oversample(X: np.ndarray, y: np.ndarray, random_state: int = 42) -> tuple:
     """Oversampling sederhana berbasis numpy — tanpa library eksternal.
     Duplikasi sampel dari kelas minoritas hingga setiap kelas memiliki
     jumlah sampel yang sama dengan kelas mayoritas.
-    max_total membatasi total sampel setelah oversampling agar model tidak terlalu besar.
     """
     rng = np.random.RandomState(random_state)
     classes, counts = np.unique(y, return_counts=True)
-    # Batasi target per kelas agar total tidak meledak
-    target_per_class = min(counts.max(), max_total // max(len(classes), 1))
-    X_parts, y_parts = [], []
+    max_count = counts.max()
+    X_parts, y_parts = [X], [y]
     for cls, cnt in zip(classes, counts):
-        idx = np.where(y == cls)[0]
-        if cnt < target_per_class:
-            chosen = rng.choice(idx, size=target_per_class, replace=True)
-        else:
-            chosen = idx
-        X_parts.append(X[chosen])
-        y_parts.append(y[chosen])
+        deficit = max_count - cnt
+        if deficit > 0:
+            idx = np.where(y == cls)[0]
+            chosen = rng.choice(idx, size=deficit, replace=True)
+            X_parts.append(X[chosen])
+            y_parts.append(y[chosen])
     return np.vstack(X_parts), np.concatenate(y_parts)
 
 
@@ -81,9 +77,9 @@ def train_brand_classifier(X_train, y_train, cv: int = 5):
     safe  = _safe_cv(y_res, cv)
 
     model = RandomForestClassifier(
-        n_estimators=50,
-        max_depth=20,
-        min_samples_leaf=2,
+        n_estimators=300,
+        max_depth=None,
+        min_samples_leaf=1,
         class_weight="balanced",
         random_state=42,
         n_jobs=-1
