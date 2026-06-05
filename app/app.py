@@ -44,6 +44,7 @@ st.markdown("""
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
+/* ── Header (selalu dark karena ada gradient) ── */
 .main-header {
     background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
     padding: 2.5rem 2rem;
@@ -65,9 +66,10 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 }
 .main-header p { color: rgba(255,255,255,0.65); font-size: 1rem; margin-top: 0.4rem; }
 
+/* ── Metric Card — adaptif light/dark ── */
 .metric-card {
-    background: linear-gradient(135deg, #0f0f1a, #1a1a2e);
-    border: 1px solid rgba(167,139,250,0.25);
+    background: var(--secondary-background-color);
+    border: 1px solid rgba(167,139,250,0.35);
     border-radius: 12px;
     padding: 1.2rem 1.5rem;
     text-align: center;
@@ -78,10 +80,11 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     box-shadow: 0 8px 24px rgba(167,139,250,0.2);
 }
 .metric-value { font-size: 1.8rem; font-weight: 700; color: #a78bfa; }
-.metric-label { font-size: 0.82rem; color: #888; margin-top: 4px; }
+.metric-label { font-size: 0.82rem; color: var(--text-color); opacity: 0.6; margin-top: 4px; }
 
+/* ── Car Card — adaptif light/dark ── */
 .car-card {
-    background: linear-gradient(135deg, #0d0d1a, #1a1a2e);
+    background: var(--secondary-background-color);
     border-left: 4px solid #7c3aed;
     border-radius: 10px;
     padding: 1rem 1.3rem;
@@ -91,9 +94,10 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .car-card:hover { border-color: #a78bfa; transform: translateX(4px); }
 .car-rank  { font-size: 1.5rem; font-weight: 700; color: #a78bfa; }
 .car-make  { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem;
-             font-weight: 700; color: #fff; letter-spacing: 1px; }
-.car-info  { font-size: 0.88rem; color: #bbb; }
+             font-weight: 700; color: var(--text-color); letter-spacing: 1px; }
+.car-info  { font-size: 0.88rem; color: var(--text-color); opacity: 0.75; }
 
+/* ── Badge ── */
 .badge {
     display: inline-block;
     padding: 2px 10px; border-radius: 20px;
@@ -104,6 +108,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .badge-premium  { background:#9333ea; color:#fff; }
 .badge-luxury   { background:#b45309; color:#fff; }
 
+/* ── Section title ── */
 .section-title {
     font-family: 'Rajdhani', sans-serif;
     font-size: 1.6rem; font-weight: 700;
@@ -113,11 +118,13 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     letter-spacing: 1px;
 }
 
+/* ── Sidebar ── */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #050510, #0d0d1a);
+    background: var(--secondary-background-color);
     border-right: 1px solid rgba(167,139,250,0.15);
 }
 
+/* ── Button ── */
 div.stButton > button {
     background: linear-gradient(135deg, #6d28d9, #7c3aed);
     color: #fff; border: none; border-radius: 8px;
@@ -130,10 +137,12 @@ div.stButton > button:hover {
     box-shadow: 0 6px 20px rgba(124,58,237,0.4);
 }
 
+/* ── Tabs ── */
 .stTabs [data-baseweb="tab"] {
-    background: rgba(124,58,237,0.1);
+    background: rgba(124,58,237,0.08);
     border-radius: 8px; padding: 6px 18px;
-    border: 1px solid rgba(124,58,237,0.2); color: #bbb;
+    border: 1px solid rgba(124,58,237,0.2);
+    color: var(--text-color);
 }
 .stTabs [aria-selected="true"] {
     background: linear-gradient(135deg, #6d28d9, #7c3aed) !important;
@@ -323,8 +332,7 @@ with tab1:
         title="Top-10 Merk Paling Cocok dengan Preferensi Anda"
     )
     fig_prob.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#ccc", height=340, coloraxis_showscale=False,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=340, coloraxis_showscale=False,
         yaxis=dict(autorange="reversed")
     )
     st.plotly_chart(fig_prob, use_container_width=True)
@@ -481,11 +489,11 @@ with tab1:
             fig_radar.update_layout(
                 polar=dict(
                     bgcolor="rgba(0,0,0,0)",
-                    radialaxis=dict(visible=True, range=[0, 1], color="#555", gridcolor="#333"),
-                    angularaxis=dict(color="#aaa", gridcolor="#333"),
+                    radialaxis=dict(visible=True, range=[0, 1], color="#555", gridcolor="rgba(128,128,128,0.2)"),
+                    angularaxis=dict(color="#aaa", gridcolor="rgba(128,128,128,0.2)"),
                 ),
                 paper_bgcolor="rgba(0,0,0,0)",
-                legend=dict(font_color="#ccc", bgcolor="rgba(0,0,0,0)"),
+                legend=dict(bgcolor="rgba(0,0,0,0)"),
                 height=420
             )
             st.plotly_chart(fig_radar, use_container_width=True)
@@ -563,8 +571,7 @@ with tab2:
         title="Top-15 Feature Importance"
     )
     fig_fi.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#ccc", xaxis=dict(gridcolor="#333"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
         yaxis=dict(autorange="reversed"),
         coloraxis_showscale=False, height=420
     )
@@ -583,8 +590,7 @@ with tab2:
     fig_price.add_shape(type="line", x0=mn, y0=mn, x1=mx, y1=mx,
                         line=dict(color="#ef4444", dash="dash", width=2))
     fig_price.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#ccc", xaxis=dict(gridcolor="#333"), yaxis=dict(gridcolor="#333"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)"), yaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
         height=400
     )
     st.plotly_chart(fig_price, use_container_width=True)
@@ -635,8 +641,7 @@ with tab3:
                 title="Top-15 Distribusi Mobil per Merk"
             )
             fig_make.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#ccc", yaxis=dict(autorange="reversed"),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis=dict(autorange="reversed"),
                 coloraxis_showscale=False, height=480
             )
             st.plotly_chart(fig_make, use_container_width=True)
@@ -653,7 +658,7 @@ with tab3:
                 },
                 title="Distribusi Segmen Harga"
             )
-            fig_seg.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc", height=380)
+            fig_seg.update_layout(paper_bgcolor="rgba(0,0,0,0)", height=380)
             st.plotly_chart(fig_seg, use_container_width=True)
 
         # Boxplot harga per merk
@@ -670,9 +675,8 @@ with tab3:
             labels={"make": "Merk", "price": "Harga ($)"}
         )
         fig_box.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#ccc", xaxis=dict(gridcolor="#333", tickangle=45),
-            yaxis=dict(gridcolor="#333"), height=430, showlegend=False
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)", tickangle=45),
+            yaxis=dict(gridcolor="rgba(128,128,128,0.2)"), height=430, showlegend=False
         )
         st.plotly_chart(fig_box, use_container_width=True)
 
@@ -687,9 +691,8 @@ with tab3:
             labels={"body-style": "Tipe Bodi", "price": "Harga ($)"}
         )
         fig_body.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#ccc", xaxis=dict(gridcolor="#333"),
-            yaxis=dict(gridcolor="#333"), height=420, showlegend=False
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(gridcolor="rgba(128,128,128,0.2)"), height=420, showlegend=False
         )
         st.plotly_chart(fig_body, use_container_width=True)
 
@@ -708,9 +711,8 @@ with tab3:
             title=f"{x_col.replace('-',' ').title()} vs Harga"
         )
         fig_sc.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#ccc", xaxis=dict(gridcolor="#333"),
-            yaxis=dict(gridcolor="#333"), height=430
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(gridcolor="rgba(128,128,128,0.2)"), height=430
         )
         st.plotly_chart(fig_sc, use_container_width=True)
 
@@ -734,16 +736,15 @@ with tab3:
                     fig_hist.add_vline(x=float(data.mean()), line_dash="dash",
                                        line_color="white",
                                        annotation_text=f"Mean={data.mean():.1f}",
-                                       annotation_font_color="white")
+                                       annotation_font_color="#a78bfa")
                     fig_hist.add_vline(x=float(data.median()), line_dash="dot",
                                        line_color="#34d399",
                                        annotation_text=f"Median={data.median():.1f}",
                                        annotation_font_color="#34d399",
                                        annotation_position="bottom right")
                     fig_hist.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        font_color="#ccc", xaxis=dict(gridcolor="#333"),
-                        yaxis=dict(gridcolor="#333", title="Frekuensi"),
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
+                        yaxis=dict(gridcolor="rgba(128,128,128,0.2)", title="Frekuensi"),
                         height=300, showlegend=False, bargap=0.05
                     )
                     st.plotly_chart(fig_hist, use_container_width=True)
@@ -775,9 +776,8 @@ with tab3:
                         title=f"Distribusi: {col_label}"
                     )
                     fig_cat.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        font_color="#ccc", xaxis=dict(gridcolor="#333", tickangle=30),
-                        yaxis=dict(gridcolor="#333"),
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)", tickangle=30),
+                        yaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
                         coloraxis_showscale=False, height=320
                     )
                     st.plotly_chart(fig_cat, use_container_width=True)
@@ -792,9 +792,8 @@ with tab3:
         )
         fig_year.update_traces(fillcolor="rgba(167,139,250,0.15)", line_color="#a78bfa")
         fig_year.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#ccc", xaxis=dict(gridcolor="#333"),
-            yaxis=dict(gridcolor="#333"), height=350
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(gridcolor="rgba(128,128,128,0.2)"), height=350
         )
         st.plotly_chart(fig_year, use_container_width=True)
 
@@ -818,7 +817,7 @@ with tab3:
             title="Correlation Matrix of Numerical Features"
         )
         fig_corr.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc",
+            paper_bgcolor="rgba(0,0,0,0)",
             height=560, title_font_size=14
         )
         fig_corr.update_traces(textfont=dict(size=11))
@@ -864,9 +863,8 @@ with tab3:
                         trendline="ols", trendline_color_override="white"
                     )
                     fig_sp.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        font_color="#ccc", xaxis=dict(gridcolor="#222"),
-                        yaxis=dict(gridcolor="#222"), height=320, showlegend=False
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.15)"),
+                        yaxis=dict(gridcolor="rgba(128,128,128,0.15)"), height=320, showlegend=False
                     )
                     st.plotly_chart(fig_sp, use_container_width=True)
 
@@ -928,9 +926,8 @@ with tab3:
                 title="Persentase Missing Value per Kolom"
             )
             fig_miss.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#ccc", xaxis=dict(gridcolor="#333"),
-                yaxis=dict(gridcolor="#333"), coloraxis_showscale=False, height=350
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
+                yaxis=dict(gridcolor="rgba(128,128,128,0.2)"), coloraxis_showscale=False, height=350
             )
             st.plotly_chart(fig_miss, use_container_width=True)
             st.dataframe(miss_nonzero, use_container_width=True, hide_index=True)
@@ -962,8 +959,7 @@ with tab3:
             title=f"Outlier Analysis: {sel_col.replace('-',' ').title()}"
         )
         fig_out.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#ccc", yaxis=dict(gridcolor="#333"), height=400
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis=dict(gridcolor="rgba(128,128,128,0.2)"), height=400
         )
         st.plotly_chart(fig_out, use_container_width=True)
 
