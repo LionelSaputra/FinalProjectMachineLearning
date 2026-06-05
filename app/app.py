@@ -239,7 +239,7 @@ with st.sidebar:
 
 # ─── Main tabs ────────────────────────────────────────────────────────────────
 if not models_exist():
-    st.info("Klik **Training Sekarang** di sidebar untuk memulai!")
+    st.info("⚙️ Training otomatis sedang berjalan... Halaman akan dimuat ulang setelah selesai.")
     st.stop()
 
 rf_clf, rf_reg, scaler, encoders, df_enc, X_test, y_test, price_t = load_all_models()
@@ -257,10 +257,8 @@ with tab1:
     prefs = {
         "horsepower":  float(horsepower),
         "city-mpg":    float(city_mpg),
-        "price":       float(max_price),
-        # highway-mpg & cylinders TIDAK dimasukkan ke prefs — sudah dihapus dari NUMERIC_FEATURES
-        # highway-mpg: multikolinearitas tinggi dengan city-mpg (r ≈ 0.89)
-        # cylinders: multikolinearitas tinggi dengan horsepower (r ≈ 0.85)
+        # 'price' tidak dimasukkan ke prefs (bukan fitur model, dihandle lewat filter max_price)
+        # highway-mpg & cylinders dihapus dari NUMERIC_FEATURES (multikolinearitas)
     }
     if body_style != "(Semua)":
         prefs["body-style"] = body_style
@@ -280,9 +278,6 @@ with tab1:
     dw_filter   = None if drive_wheels == "(Semua)" else drive_wheels
 
     # Prediksi merk & harga
-    enc_cols = [c + "_enc" for c in CAT_FEATURES]
-    all_cols = NUMERIC_FEATURES + enc_cols
-
     from recommend import _encode_input
     input_vec    = _encode_input(prefs, df_enc, encoders)
     input_scaled = scaler.transform(input_vec)
@@ -451,46 +446,49 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-    # Radar chart
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("#### Radar — Preferensi vs Rekomendasi #1")
+    # Radar chart — hanya tampilkan jika ada rekomendasi
+    if len(result_df) > 0:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### Radar — Preferensi vs Rekomendasi #1")
 
-    # Gunakan hanya fitur yang benar-benar digunakan model (NUMERIC_FEATURES)
-    # highway-mpg & popularity sudah dikeluarkan (multikolinearitas & target leakage)
-    # cylinders sudah dikeluarkan (multikolinearitas tinggi dengan horsepower)
-    radar_feats = ["horsepower", "city-mpg", "year", "num-of-doors"]
+        # Gunakan hanya fitur yang benar-benar digunakan model (NUMERIC_FEATURES)
+        # dan yang tersedia di result_df (DISPLAY_COLS)
+        # cylinders sudah dikeluarkan (multikolinearitas tinggi dengan horsepower)
+        _radar_candidates = ["horsepower", "city-mpg", "year", "num-of-doors"]
+        radar_feats = [f for f in _radar_candidates if f in result_df.columns and f in df_enc.columns]
 
-    def norm_val(col, val):
-        lo, hi = df_enc[col].min(), df_enc[col].max()
-        return (float(val) - lo) / (hi - lo + 1e-9)
+        if len(radar_feats) >= 2:
+            def norm_val(col, val):
+                lo, hi = df_enc[col].min(), df_enc[col].max()
+                return (float(val) - lo) / (hi - lo + 1e-9)
 
-    user_r = [norm_val(f, prefs.get(f, df_enc[f].median())) for f in radar_feats]
-    top1   = result_df.iloc[0]
-    top_r  = [norm_val(f, top1[f]) for f in radar_feats]
-    cats   = [f.replace("-", "\n").title() for f in radar_feats]
+            top1   = result_df.iloc[0]
+            user_r = [norm_val(f, prefs.get(f, df_enc[f].median())) for f in radar_feats]
+            top_r  = [norm_val(f, top1[f]) for f in radar_feats]
+            cats   = [f.replace("-", "\n").title() for f in radar_feats]
 
-    fig_radar = go.Figure()
-    fig_radar.add_trace(go.Scatterpolar(
-        r=user_r + [user_r[0]], theta=cats + [cats[0]],
-        fill="toself", name="Preferensi Anda",
-        line_color="#a78bfa", fillcolor="rgba(167,139,250,0.2)"
-    ))
-    fig_radar.add_trace(go.Scatterpolar(
-        r=top_r + [top_r[0]], theta=cats + [cats[0]],
-        fill="toself", name=f"#{1} {top1.get('make_display','?')} {top1.get('model','')}",
-        line_color="#34d399", fillcolor="rgba(52,211,153,0.2)"
-    ))
-    fig_radar.update_layout(
-        polar=dict(
-            bgcolor="rgba(0,0,0,0)",
-            radialaxis=dict(visible=True, range=[0, 1], color="#555", gridcolor="#333"),
-            angularaxis=dict(color="#aaa", gridcolor="#333"),
-        ),
-        paper_bgcolor="rgba(0,0,0,0)",
-        legend=dict(font_color="#ccc", bgcolor="rgba(0,0,0,0)"),
-        height=420
-    )
-    st.plotly_chart(fig_radar, use_container_width=True)
+            fig_radar = go.Figure()
+            fig_radar.add_trace(go.Scatterpolar(
+                r=user_r + [user_r[0]], theta=cats + [cats[0]],
+                fill="toself", name="Preferensi Anda",
+                line_color="#a78bfa", fillcolor="rgba(167,139,250,0.2)"
+            ))
+            fig_radar.add_trace(go.Scatterpolar(
+                r=top_r + [top_r[0]], theta=cats + [cats[0]],
+                fill="toself", name=f"#{1} {top1.get('make_display','?')} {top1.get('model','')}",
+                line_color="#34d399", fillcolor="rgba(52,211,153,0.2)"
+            ))
+            fig_radar.update_layout(
+                polar=dict(
+                    bgcolor="rgba(0,0,0,0)",
+                    radialaxis=dict(visible=True, range=[0, 1], color="#555", gridcolor="#333"),
+                    angularaxis=dict(color="#aaa", gridcolor="#333"),
+                ),
+                paper_bgcolor="rgba(0,0,0,0)",
+                legend=dict(font_color="#ccc", bgcolor="rgba(0,0,0,0)"),
+                height=420
+            )
+            st.plotly_chart(fig_radar, use_container_width=True)
 
     # Tabel detail
     st.markdown("#### Tabel Detail Rekomendasi")

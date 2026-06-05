@@ -33,22 +33,27 @@ def _safe_cv(y_train: np.ndarray, max_cv: int = 5) -> int:
     return max(2, min(max_cv, int(counts.min())))
 
 
-def _random_oversample(X: np.ndarray, y: np.ndarray, random_state: int = 42) -> tuple:
+def _random_oversample(X: np.ndarray, y: np.ndarray, random_state: int = 42,
+                       max_total: int = 15000) -> tuple:
     """Oversampling sederhana berbasis numpy — tanpa library eksternal.
     Duplikasi sampel dari kelas minoritas hingga setiap kelas memiliki
     jumlah sampel yang sama dengan kelas mayoritas.
+    max_total: batas total sampel setelah oversampling (cegah OOM di Streamlit Cloud).
     """
     rng = np.random.RandomState(random_state)
     classes, counts = np.unique(y, return_counts=True)
-    max_count = counts.max()
-    X_parts, y_parts = [X], [y]
+    # Batasi target per kelas agar total tidak meledak
+    n_classes = max(len(classes), 1)
+    target_per_class = min(counts.max(), max_total // n_classes)
+    X_parts, y_parts = [], []
     for cls, cnt in zip(classes, counts):
-        deficit = max_count - cnt
-        if deficit > 0:
-            idx = np.where(y == cls)[0]
-            chosen = rng.choice(idx, size=deficit, replace=True)
-            X_parts.append(X[chosen])
-            y_parts.append(y[chosen])
+        idx = np.where(y == cls)[0]
+        if cnt < target_per_class:
+            chosen = rng.choice(idx, size=target_per_class, replace=True)
+        else:
+            chosen = idx  # kelas mayoritas: pakai semua
+        X_parts.append(X[chosen])
+        y_parts.append(y[chosen])
     return np.vstack(X_parts), np.concatenate(y_parts)
 
 
@@ -74,19 +79,22 @@ def train_brand_classifier(X_train, y_train, cv: int = 5):
         print("[WARN] Oversampling dilewati karena ada kelas dengan <2 sampel di data training.")
         X_res, y_res = X_arr, y_arr
 
-    safe  = _safe_cv(y_res, cv)
-
+    # ─── CV pada data ASLI (sebelum oversampling) agar tidak data leakage ─────
+    # Oversampling hanya untuk training final, bukan evaluasi CV
+    safe_orig = _safe_cv(y_arr, cv)
     model = RandomForestClassifier(
-        n_estimators=300,
+        n_estimators=150,
         max_depth=None,
         min_samples_leaf=1,
         class_weight="balanced",
         random_state=42,
         n_jobs=-1
     )
+    cv_scores = cross_val_score(model, X_arr, y_arr, cv=safe_orig, scoring="f1_weighted")
+    print(f"[CV]  F1-Weighted (data asli): {cv_scores.round(4)} | mean={cv_scores.mean():.4f}")
 
-    cv_scores = cross_val_score(model, X_res, y_res, cv=safe, scoring="f1_weighted")
-    print(f"[CV]  F1-Weighted: {cv_scores.round(4)} | mean={cv_scores.mean():.4f}")
+    # ─── Fit final pada data OVERSAMPLED ──────────────────────────────────────
+    safe  = _safe_cv(y_res, cv)
     model.fit(X_res, y_res)
     print("[TRAIN] Selesai!")
     return model, cv_scores

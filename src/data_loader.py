@@ -75,15 +75,26 @@ PRICE_SEGMENTS = {
 
 
 def download_dataset() -> None:
-    """Unduh dataset jika belum ada secara lokal."""
+    """Unduh dataset jika belum ada secara lokal (dengan retry 3x)."""
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(LOCAL_FILE):
         print("[INFO] Mengunduh dataset Edmunds Car Features & MSRP...")
-        resp = requests.get(DATA_URL, timeout=30)
-        resp.raise_for_status()
-        with open(LOCAL_FILE, "wb") as f:
-            f.write(resp.content)
-        print("[INFO] Dataset berhasil diunduh.")
+        last_err = None
+        for attempt in range(1, 4):
+            try:
+                resp = requests.get(DATA_URL, timeout=30)
+                resp.raise_for_status()
+                with open(LOCAL_FILE, "wb") as f:
+                    f.write(resp.content)
+                print("[INFO] Dataset berhasil diunduh.")
+                return
+            except Exception as e:
+                last_err = e
+                print(f"[WARN] Percobaan {attempt}/3 gagal: {e}")
+        raise RuntimeError(
+            f"Gagal mengunduh dataset setelah 3 percobaan. Error terakhir: {last_err}\n"
+            f"URL: {DATA_URL}"
+        )
     else:
         print("[INFO] Dataset sudah ada secara lokal, melewati unduhan.")
 
