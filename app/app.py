@@ -594,14 +594,17 @@ with tab2:
 # TAB 3 — EKSPLORASI DATA
 # ══════════════════════════════════════════════════════════════════════════════
 with tab3:
-    st.markdown('<p class="section-title">Eksplorasi Dataset Mobil</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-title">Eksplorasi Dataset Mobil (EDA)</p>', unsafe_allow_html=True)
 
     df_raw = load_cached_data()
 
-    e1, e2, e3, e4 = st.columns(4)
-    for col, (label, val) in zip([e1,e2,e3,e4], [
-        ("Total Mobil", len(df_raw)),
-        ("Jumlah Merk", df_raw["make"].nunique()),
+    # ── Overview metrics (6 kolom) ────────────────────────────────────────────
+    e1, e2, e3, e4, e5, e6 = st.columns(6)
+    for col, (label, val) in zip([e1,e2,e3,e4,e5,e6], [
+        ("Total Mobil",   len(df_raw)),
+        ("Jumlah Merk",   df_raw["make"].nunique()),
+        ("Jumlah Model",  df_raw["model"].nunique()),
+        ("Tahun Tertua",  int(df_raw["year"].min())),
         ("Harga Min ($)", f"{df_raw['price'].min():,.0f}"),
         ("Harga Max ($)", f"{df_raw['price'].max():,.0f}"),
     ]):
@@ -612,141 +615,265 @@ with tab3:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Distribusi merk
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
-        make_counts = df_raw["make"].value_counts().reset_index()
-        make_counts.columns = ["Merk", "Jumlah"]
-        # Ambil Top-15 untuk visualisasi agar tidak terlalu padat
-        fig_make = px.bar(
-            make_counts.head(15), x="Jumlah", y="Merk", orientation="h",
-            color="Jumlah",
-            color_continuous_scale=[[0,"#1e1b4b"],[1,"#a78bfa"]],
-            title="Top-15 Distribusi Mobil per Merk"
-        )
-        fig_make.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#ccc", yaxis=dict(autorange="reversed"),
-            coloraxis_showscale=False, height=500
-        )
-        st.plotly_chart(fig_make, use_container_width=True)
+    # ── 4 Sub-tab EDA ─────────────────────────────────────────────────────────
+    eda1, eda2, eda3, eda4 = st.tabs([
+        "📊 Distribusi Merk & Harga",
+        "📈 Distribusi Fitur",
+        "🔗 Korelasi & Multikolinearitas",
+        "🧹 Kualitas Data",
+    ])
 
-    with col_d2:
-        seg_counts = df_raw["price_segment"].value_counts().reset_index()
-        seg_counts.columns = ["Segmen", "Jumlah"]
-        fig_seg = px.pie(
-            seg_counts, values="Jumlah", names="Segmen",
-            color="Segmen",
+    # ── EDA 1: DISTRIBUSI MERK & HARGA ───────────────────────────────────────
+    with eda1:
+        col_d1, col_d2 = st.columns(2)
+        with col_d1:
+            make_counts = df_raw["make"].value_counts().reset_index()
+            make_counts.columns = ["Merk", "Jumlah"]
+            fig_make = px.bar(
+                make_counts.head(15), x="Jumlah", y="Merk", orientation="h",
+                color="Jumlah", color_continuous_scale=[[0,"#1e1b4b"],[1,"#a78bfa"]],
+                title="Top-15 Distribusi Mobil per Merk"
+            )
+            fig_make.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#ccc", yaxis=dict(autorange="reversed"),
+                coloraxis_showscale=False, height=480
+            )
+            st.plotly_chart(fig_make, use_container_width=True)
+
+        with col_d2:
+            seg_counts = df_raw["price_segment"].value_counts().reset_index()
+            seg_counts.columns = ["Segmen", "Jumlah"]
+            fig_seg = px.pie(
+                seg_counts, values="Jumlah", names="Segmen", hole=0.4,
+                color="Segmen",
+                color_discrete_map={
+                    "Budget (< $15K)": "#16a34a", "Mid-Range ($15-30K)": "#2563eb",
+                    "Premium ($30-60K)": "#9333ea", "Luxury (> $60K)": "#b45309",
+                },
+                title="Distribusi Segmen Harga"
+            )
+            fig_seg.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc", height=380)
+            st.plotly_chart(fig_seg, use_container_width=True)
+
+        # Boxplot harga per merk
+        st.markdown("#### Distribusi Harga per Merk (Top 10 Terpopuler)")
+        top10_makes = df_raw["make"].value_counts().head(10).index
+        df_box = df_raw[df_raw["make"].isin(top10_makes)].copy()
+        fig_box = px.box(
+            df_box, x="make", y="price", color="price_segment",
             color_discrete_map={
-                "Budget (< $15K)": "#16a34a",
-                "Mid-Range ($15-30K)": "#2563eb",
-                "Premium ($30-60K)": "#9333ea",
-                "Luxury (> $60K)": "#b45309",
+                "Budget (< $15K)": "#16a34a", "Mid-Range ($15-30K)": "#2563eb",
+                "Premium ($30-60K)": "#9333ea", "Luxury (> $60K)": "#b45309",
             },
-            title="Distribusi Segmen Harga"
+            title="Distribusi Harga pada Top 10 Merk Mobil",
+            labels={"make": "Merk", "price": "Harga ($)"}
         )
-        fig_seg.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc", height=380)
-        st.plotly_chart(fig_seg, use_container_width=True)
-
-    # Harga per merk (Top 10 terpopuler)
-    st.markdown("#### Distribusi Harga per Merk (Top 10 Terpopuler)")
-    top10_makes = df_raw["make"].value_counts().head(10).index
-    df_box = df_raw[df_raw["make"].isin(top10_makes)].copy()
-    
-    fig_box = px.box(
-        df_box, x="make", y="price", color="price_segment",
-        color_discrete_map={
-            "Budget (< $15K)": "#16a34a",
-            "Mid-Range ($15-30K)": "#2563eb",
-            "Premium ($30-60K)": "#9333ea",
-            "Luxury (> $60K)": "#b45309",
-        },
-        title="Distribusi Harga pada Top 10 Merk Mobil",
-        labels={"make": "Merk", "price": "Harga ($)"}
-    )
-    fig_box.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#ccc", xaxis=dict(gridcolor="#333", tickangle=45),
-        yaxis=dict(gridcolor="#333"), height=430,
-        showlegend=False
-    )
-    st.plotly_chart(fig_box, use_container_width=True)
-
-    # Scatter HP vs Price
-    st.markdown("#### Hubungan Fitur Teknis vs Harga")
-    sc1, sc2 = st.columns(2)
-    with sc1:
-        # Pengecualian kolom price
-        features_x = [f for f in NUMERIC_FEATURES if f != "price"]
-        x_col = st.selectbox("Fitur X", features_x, index=1, key="sc_x")
-    with sc2:
-        color_col = st.selectbox("Warna berdasarkan", ["make", "body-style", "fuel-type",
-                                                        "drive-wheels", "price_segment"], key="sc_c")
-    fig_sc = px.scatter(
-        df_raw, x=x_col, y="price", color=color_col, opacity=0.8,
-        size="horsepower", hover_data=["make", "model", "price"],
-        title=f"{x_col.title()} vs Harga"
-    )
-    fig_sc.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#ccc", xaxis=dict(gridcolor="#333"),
-        yaxis=dict(gridcolor="#333"), height=430
-    )
-    st.plotly_chart(fig_sc, use_container_width=True)
-
-    # ── Correlation Heatmap ──────────────────────────────────────────────────
-    st.markdown("#### Korelasi Fitur Numerik")
-
-    # Gunakan semua fitur numerik relevan (termasuk highway-mpg & popularity)
-    ALL_NUM_COLS = ["year", "horsepower", "cylinders", "num-of-doors",
-                    "highway-mpg", "city-mpg", "popularity", "price"]
-    num_df = df_raw[[c for c in ALL_NUM_COLS if c in df_raw.columns]].copy()
-    corr   = num_df.corr(numeric_only=True)
-
-    # Warna diverging: merah negatif, putih 0, biru positif
-    corr_scale = [
-        [0.00, "#b91c1c"], [0.25, "#7f1d1d"],
-        [0.50, "#1a1a2e"],
-        [0.75, "#1e3a5f"], [1.00, "#2563eb"]
-    ]
-    fig_corr = px.imshow(
-        corr, text_auto=".2f",
-        color_continuous_scale=corr_scale,
-        zmin=-1, zmax=1,
-        title="Correlation Matrix of Numerical Features"
-    )
-    fig_corr.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc",
-        height=560, title_font_size=14
-    )
-    fig_corr.update_traces(textfont=dict(size=11))
-    st.plotly_chart(fig_corr, use_container_width=True)
-
-    # ── Analisis pasangan berkorelasi tinggi ─────────────────────────────────
-    st.markdown("##### Analisis Multikolinearitas — Pasangan Fitur Berkorelasi Tinggi")
-    cols_list = list(corr.columns)
-    high_pairs = []
-    for i, r in enumerate(cols_list):
-        for j, c in enumerate(cols_list):
-            if i < j:
-                v = abs(corr.loc[r, c])
-                if v >= 0.70:
-                    high_pairs.append({"Fitur A": r, "Fitur B": c, "|Korelasi|": round(v, 3)})
-
-    if high_pairs:
-        hp_df = pd.DataFrame(high_pairs).sort_values("|Korelasi|", ascending=False)
-        st.dataframe(
-            hp_df.style.background_gradient(subset=["|Korelasi|"], cmap="RdYlGn_r"),
-            use_container_width=True, hide_index=True
+        fig_box.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#ccc", xaxis=dict(gridcolor="#333", tickangle=45),
+            yaxis=dict(gridcolor="#333"), height=430, showlegend=False
         )
-    else:
-        st.info("Tidak ada pasangan fitur dengan |korelasi| ≥ 0.70")
+        st.plotly_chart(fig_box, use_container_width=True)
 
-    # ── Info card pemilihan fitur ─────────────────────────────────────────────
-    st.markdown("")
-    col_info1, col_info2 = st.columns(2)
-    with col_info1:
-        st.error("""
+        # Boxplot harga per body style
+        st.markdown("#### Distribusi Harga per Tipe Bodi")
+        body_order = df_raw.groupby("body-style")["price"].median().sort_values(ascending=False).index.tolist()
+        fig_body = px.box(
+            df_raw, x="body-style", y="price",
+            category_orders={"body-style": body_order},
+            color="body-style", color_discrete_sequence=px.colors.qualitative.Vivid,
+            title="Distribusi Harga per Tipe Bodi Mobil",
+            labels={"body-style": "Tipe Bodi", "price": "Harga ($)"}
+        )
+        fig_body.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#ccc", xaxis=dict(gridcolor="#333"),
+            yaxis=dict(gridcolor="#333"), height=420, showlegend=False
+        )
+        st.plotly_chart(fig_body, use_container_width=True)
+
+        # Scatter interaktif
+        st.markdown("#### Hubungan Fitur Teknis vs Harga (Interaktif)")
+        sc1, sc2 = st.columns(2)
+        with sc1:
+            features_x = [f for f in NUMERIC_FEATURES if f != "price"]
+            x_col = st.selectbox("Fitur X", features_x, index=1 if len(features_x) > 1 else 0, key="sc_x")
+        with sc2:
+            color_col = st.selectbox("Warna berdasarkan", ["make", "body-style", "fuel-type",
+                                                            "drive-wheels", "price_segment"], key="sc_c")
+        fig_sc = px.scatter(
+            df_raw, x=x_col, y="price", color=color_col, opacity=0.75,
+            size="horsepower", hover_data=["make", "model", "year", "price"],
+            title=f"{x_col.replace('-',' ').title()} vs Harga"
+        )
+        fig_sc.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#ccc", xaxis=dict(gridcolor="#333"),
+            yaxis=dict(gridcolor="#333"), height=430
+        )
+        st.plotly_chart(fig_sc, use_container_width=True)
+
+    # ── EDA 2: DISTRIBUSI FITUR ───────────────────────────────────────────────
+    with eda2:
+        st.markdown("#### Distribusi Fitur Numerik")
+        num_plot_cols = [c for c in NUMERIC_FEATURES + ["price"] if c in df_raw.columns]
+        hist_colors   = ["#a78bfa","#60a5fa","#34d399","#f472b6","#fb923c","#38bdf8"]
+
+        for i in range(0, len(num_plot_cols), 2):
+            cols_pair = st.columns(2)
+            for j, col_name in enumerate(num_plot_cols[i:i+2]):
+                with cols_pair[j]:
+                    data = df_raw[col_name].dropna()
+                    clr  = hist_colors[(i + j) % len(hist_colors)]
+                    fig_hist = px.histogram(
+                        df_raw, x=col_name, nbins=40,
+                        color_discrete_sequence=[clr],
+                        title=f"Distribusi: {col_name.replace('-',' ').title()}"
+                    )
+                    fig_hist.add_vline(x=float(data.mean()), line_dash="dash",
+                                       line_color="white",
+                                       annotation_text=f"Mean={data.mean():.1f}",
+                                       annotation_font_color="white")
+                    fig_hist.add_vline(x=float(data.median()), line_dash="dot",
+                                       line_color="#34d399",
+                                       annotation_text=f"Median={data.median():.1f}",
+                                       annotation_font_color="#34d399",
+                                       annotation_position="bottom right")
+                    fig_hist.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        font_color="#ccc", xaxis=dict(gridcolor="#333"),
+                        yaxis=dict(gridcolor="#333", title="Frekuensi"),
+                        height=300, showlegend=False, bargap=0.05
+                    )
+                    st.plotly_chart(fig_hist, use_container_width=True)
+
+        st.markdown("---")
+        st.markdown("#### Distribusi Fitur Kategorik")
+
+        cat_plot_list = [
+            ("body-style",   "Tipe Bodi"),
+            ("fuel-type",    "Tipe BBM"),
+            ("drive-wheels", "Penggerak Roda"),
+            ("transmission", "Transmisi"),
+            ("vehicle-size", "Ukuran Kendaraan"),
+        ]
+        cat_colors = ["#a78bfa","#60a5fa","#34d399","#f472b6","#fb923c"]
+        for i in range(0, len(cat_plot_list), 2):
+            cols_pair = st.columns(2)
+            for j, (col_name, col_label) in enumerate(cat_plot_list[i:i+2]):
+                if col_name not in df_raw.columns:
+                    continue
+                with cols_pair[j]:
+                    vc  = df_raw[col_name].value_counts().reset_index()
+                    vc.columns = [col_label, "Jumlah"]
+                    clr = cat_colors[(i + j) % len(cat_colors)]
+                    fig_cat = px.bar(
+                        vc, x=col_label, y="Jumlah",
+                        color="Jumlah",
+                        color_continuous_scale=[[0,"#1a1a2e"],[1, clr]],
+                        title=f"Distribusi: {col_label}"
+                    )
+                    fig_cat.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        font_color="#ccc", xaxis=dict(gridcolor="#333", tickangle=30),
+                        yaxis=dict(gridcolor="#333"),
+                        coloraxis_showscale=False, height=320
+                    )
+                    st.plotly_chart(fig_cat, use_container_width=True)
+
+        st.markdown("#### Tren Jumlah Model per Tahun Produksi")
+        year_counts = df_raw["year"].value_counts().sort_index().reset_index()
+        year_counts.columns = ["Tahun", "Jumlah"]
+        fig_year = px.area(
+            year_counts, x="Tahun", y="Jumlah",
+            color_discrete_sequence=["#a78bfa"],
+            title="Jumlah Model Mobil per Tahun Produksi"
+        )
+        fig_year.update_traces(fillcolor="rgba(167,139,250,0.15)", line_color="#a78bfa")
+        fig_year.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#ccc", xaxis=dict(gridcolor="#333"),
+            yaxis=dict(gridcolor="#333"), height=350
+        )
+        st.plotly_chart(fig_year, use_container_width=True)
+
+    # ── EDA 3: KORELASI & MULTIKOLINEARITAS ───────────────────────────────────
+    with eda3:
+        st.markdown("#### Correlation Matrix — Semua Fitur Numerik")
+        ALL_NUM_COLS = ["year", "horsepower", "cylinders", "num-of-doors",
+                        "highway-mpg", "city-mpg", "popularity", "price"]
+        num_df = df_raw[[c for c in ALL_NUM_COLS if c in df_raw.columns]].copy()
+        corr   = num_df.corr(numeric_only=True)
+
+        corr_scale = [
+            [0.00, "#b91c1c"], [0.25, "#7f1d1d"],
+            [0.50, "#1a1a2e"],
+            [0.75, "#1e3a5f"], [1.00, "#2563eb"]
+        ]
+        fig_corr = px.imshow(
+            corr, text_auto=".2f",
+            color_continuous_scale=corr_scale,
+            zmin=-1, zmax=1,
+            title="Correlation Matrix of Numerical Features"
+        )
+        fig_corr.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", font_color="#ccc",
+            height=560, title_font_size=14
+        )
+        fig_corr.update_traces(textfont=dict(size=11))
+        st.plotly_chart(fig_corr, use_container_width=True)
+
+        st.markdown("##### Pasangan Fitur Berkorelasi Tinggi (|r| ≥ 0.70)")
+        cols_list  = list(corr.columns)
+        high_pairs = []
+        for i, r in enumerate(cols_list):
+            for j, c in enumerate(cols_list):
+                if i < j:
+                    v = abs(corr.loc[r, c])
+                    if v >= 0.70:
+                        high_pairs.append({"Fitur A": r, "Fitur B": c, "|Korelasi|": round(v, 3)})
+        if high_pairs:
+            hp_df = pd.DataFrame(high_pairs).sort_values("|Korelasi|", ascending=False)
+            st.dataframe(
+                hp_df.style.background_gradient(subset=["|Korelasi|"], cmap="RdYlGn_r"),
+                use_container_width=True, hide_index=True
+            )
+        else:
+            st.info("Tidak ada pasangan fitur dengan |korelasi| ≥ 0.70")
+
+        # Scatter pasangan berkorelasi tinggi
+        st.markdown("##### Scatter — Pasangan Berkorelasi Tinggi")
+        scatter_pairs_corr = [
+            ("horsepower", "price",       "HP vs Harga"),
+            ("city-mpg",   "highway-mpg", "City MPG vs Highway MPG"),
+            ("horsepower", "cylinders",   "HP vs Silinder"),
+        ]
+        valid_pairs = [(a, b, lbl) for a, b, lbl in scatter_pairs_corr
+                       if a in df_raw.columns and b in df_raw.columns]
+        if valid_pairs:
+            sc_cols_row = st.columns(len(valid_pairs))
+            clrs = ["#a78bfa", "#60a5fa", "#34d399"]
+            for idx, (xa, xb, lbl) in enumerate(valid_pairs):
+                with sc_cols_row[idx]:
+                    r_val = corr.loc[xa, xb] if xa in corr.columns and xb in corr.columns else 0
+                    fig_sp = px.scatter(
+                        df_raw, x=xa, y=xb, opacity=0.4,
+                        color_discrete_sequence=[clrs[idx % len(clrs)]],
+                        title=f"{lbl}  (r={r_val:.2f})",
+                        trendline="ols", trendline_color_override="white"
+                    )
+                    fig_sp.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        font_color="#ccc", xaxis=dict(gridcolor="#222"),
+                        yaxis=dict(gridcolor="#222"), height=320, showlegend=False
+                    )
+                    st.plotly_chart(fig_sp, use_container_width=True)
+
+        st.markdown("---")
+        col_info1, col_info2 = st.columns(2)
+        with col_info1:
+            st.error("""
 **⛔ Fitur yang DIKELUARKAN dari model:**
 
 - **`highway-mpg`** — Korelasi sangat tinggi dengan `city-mpg` (~0.89).
@@ -758,9 +885,9 @@ with tab3:
 
 - **`popularity`** — Nilai konstan per merk (make).
   Menyebabkan *target leakage* → akurasi model palsu 99%+.
-        """)
-    with col_info2:
-        st.success("""
+            """)
+        with col_info2:
+            st.success("""
 **✅ Fitur INPUT yang digunakan model:**
 
 - **`year`** — Tahun produksi
@@ -768,7 +895,85 @@ with tab3:
 - **`num-of-doors`** — Jumlah pintu
 - **`city-mpg`** — Konsumsi BBM kota (mewakili efisiensi)
 - **+ Fitur kategorik** (body-style, fuel-type, transmission, drive-wheels, vehicle-size)
-        """)
+            """)
+
+    # ── EDA 4: KUALITAS DATA ──────────────────────────────────────────────────
+    with eda4:
+        st.markdown("#### Ringkasan Statistik Fitur Numerik")
+        stat_cols = [c for c in NUMERIC_FEATURES + ["price"] if c in df_raw.columns]
+        stat_df   = df_raw[stat_cols].describe().T.round(2)
+        stat_df.index.name = "Fitur"
+        st.dataframe(stat_df.style.background_gradient(cmap="RdPu", axis=0),
+                     use_container_width=True)
+
+        st.markdown("---")
+        st.markdown("#### Missing Values per Kolom")
+        all_check_cols = NUMERIC_FEATURES + CAT_FEATURES + ["price", "popularity", "highway-mpg"]
+        all_check_cols = [c for c in all_check_cols if c in df_raw.columns]
+        missing     = df_raw[all_check_cols].isnull().sum()
+        missing_pct = (missing / len(df_raw) * 100).round(2)
+        miss_df = pd.DataFrame({
+            "Kolom":     missing.index,
+            "Missing":   missing.values,
+            "Persen (%)": missing_pct.values
+        })
+        if miss_df["Missing"].sum() == 0:
+            st.success("✅ Tidak ada missing value setelah preprocessing!")
+        else:
+            miss_nonzero = miss_df[miss_df["Missing"] > 0]
+            fig_miss = px.bar(
+                miss_nonzero, x="Kolom", y="Persen (%)",
+                color="Persen (%)",
+                color_continuous_scale=[[0,"#1e1b4b"],[1,"#ef4444"]],
+                title="Persentase Missing Value per Kolom"
+            )
+            fig_miss.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#ccc", xaxis=dict(gridcolor="#333"),
+                yaxis=dict(gridcolor="#333"), coloraxis_showscale=False, height=350
+            )
+            st.plotly_chart(fig_miss, use_container_width=True)
+            st.dataframe(miss_nonzero, use_container_width=True, hide_index=True)
+
+        st.markdown("---")
+        st.markdown("#### Outlier Detection (IQR Method)")
+        out_cols = [c for c in NUMERIC_FEATURES + ["price"] if c in df_raw.columns]
+        sel_col  = st.selectbox("Pilih fitur:", out_cols, key="outlier_sel")
+
+        q1, q3   = df_raw[sel_col].quantile(0.25), df_raw[sel_col].quantile(0.75)
+        iqr      = q3 - q1
+        lower, upper = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+        n_outliers   = int(((df_raw[sel_col] < lower) | (df_raw[sel_col] > upper)).sum())
+
+        o1, o2, o3, o4 = st.columns(4)
+        for oc, (lbl, v) in zip([o1,o2,o3,o4], [
+            ("Q1",  f"{q1:,.1f}"), ("Q3", f"{q3:,.1f}"),
+            ("IQR", f"{iqr:,.1f}"), ("Outlier", n_outliers)
+        ]):
+            with oc:
+                st.markdown(f"""<div class="metric-card">
+                    <div class="metric-value">{v}</div>
+                    <div class="metric-label">{lbl}</div></div>""", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        fig_out = px.box(
+            df_raw, y=sel_col, points="outliers",
+            color_discrete_sequence=["#a78bfa"],
+            title=f"Outlier Analysis: {sel_col.replace('-',' ').title()}"
+        )
+        fig_out.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#ccc", yaxis=dict(gridcolor="#333"), height=400
+        )
+        st.plotly_chart(fig_out, use_container_width=True)
+
+        st.markdown("---")
+        st.markdown("#### Sampel Data Mentah (20 Baris Pertama)")
+        st.dataframe(
+            df_raw[["make","model","year","body-style","fuel-type",
+                    "horsepower","city-mpg","price","price_segment"]].head(20),
+            use_container_width=True, hide_index=True
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
