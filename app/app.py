@@ -195,21 +195,21 @@ with st.sidebar:
     st.markdown("---")
 
     if not models_exist():
-        st.warning("Model belum ditraining!")
-        if st.button("Training Sekarang", key="train_btn"):
-            with st.spinner("Melatih model... (~30 detik)"):
-                import subprocess
-                res = subprocess.run(
-                    [sys.executable, os.path.join(ROOT, "src", "train_model.py")],
-                    capture_output=True, text=True, cwd=ROOT
-                )
-                if res.returncode == 0:
-                    st.success("Training berhasil!")
-                    st.cache_resource.clear()
-                    st.rerun()
-                else:
-                    st.error("Training gagal!")
-                    st.code(res.stderr[-1500:])
+        st.warning("⚙️ Model belum tersedia — memulai training otomatis...")
+        with st.spinner("Melatih model... (~60 detik, harap tunggu)"):
+            import subprocess
+            res = subprocess.run(
+                [sys.executable, os.path.join(ROOT, "src", "train_model.py")],
+                capture_output=True, text=True, cwd=ROOT
+            )
+            if res.returncode == 0:
+                st.success("✅ Training berhasil!")
+                st.cache_resource.clear()
+                st.rerun()
+            else:
+                st.error("❌ Training gagal!")
+                st.code(res.stderr[-2000:])
+                st.stop()
     else:
         st.success("Model siap digunakan")
 
