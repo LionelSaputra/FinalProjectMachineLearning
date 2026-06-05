@@ -374,7 +374,6 @@ with tab1:
         body      = row.get("body-style", "-")
         ft        = row.get("fuel-type", "-")
         mpg       = row.get("city-mpg", "-")
-        cyl       = row.get("cylinders", "-")
         model_name = row.get("model", "-")
         year      = row.get("year", "-")
         trans     = row.get("transmission", "-")
@@ -394,7 +393,6 @@ with tab1:
                 Penggerak: <b>{row.get('drive-wheels', '-')}</b> &nbsp;|&nbsp;
                 BBM: <b>{ft}</b> &nbsp;|&nbsp;
                 HP: <b>{hp:.0f}</b> &nbsp;|&nbsp;
-                Silinder: <b>{cyl:.0f}</b> &nbsp;|&nbsp;
                 MPG: <b>{mpg:.0f}</b> &nbsp;|&nbsp;
                 Harga: <b>${price_val:,.0f}</b>
             </div>
@@ -427,7 +425,6 @@ with tab1:
             b_body      = b_row.get("body-style", "-")
             b_ft        = b_row.get("fuel-type", "-")
             b_mpg       = b_row.get("city-mpg", "-")
-            b_cyl       = b_row.get("cylinders", "-")
             b_model_name = b_row.get("model", "-")
             b_year      = b_row.get("year", "-")
             b_trans     = b_row.get("transmission", "-")
@@ -448,7 +445,6 @@ with tab1:
                     Penggerak: <b>{b_dw}</b> &nbsp;|&nbsp;
                     BBM: <b>{b_ft}</b> &nbsp;|&nbsp;
                     HP: <b>{b_hp:.0f}</b> &nbsp;|&nbsp;
-                    Silinder: <b>{b_cyl:.0f}</b> &nbsp;|&nbsp;
                     MPG: <b>{b_mpg:.0f}</b> &nbsp;|&nbsp;
                     Harga: <b>${b_price_val:,.0f}</b>
                 </div>
