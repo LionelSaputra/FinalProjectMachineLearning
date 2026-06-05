@@ -341,7 +341,7 @@ with tab1:
 
     # Rekomendasi
     with st.spinner("Mencari mobil terbaik..."):
-        result_df, _, _ = get_recommendations(
+        result_df, _, _, relaxed_filters = get_recommendations(
             prefs, scaler, encoders, df_enc,
             classifier=rf_clf, regressor=None,
             n_recommendations=n_recs,
@@ -350,6 +350,15 @@ with tab1:
             transmission_filter=trans_filter,
             drive_wheels_filter=dw_filter,
             max_price=float(max_price),
+        )
+
+    # Tampilkan peringatan jika ada filter yang dilonggarkan
+    if relaxed_filters:
+        st.warning(
+            f"⚠️ **Filter terlalu ketat — tidak ada mobil yang memenuhi semua kriteria.**\n\n"
+            f"Filter berikut **dilonggarkan** secara otomatis agar ada hasil rekomendasi:\n"
+            + "\n".join([f"- {f}" for f in relaxed_filters])
+            + "\n\n💡 *Tips: Ubah filter tersebut atau pilih '(Semua)' untuk hasil yang lebih luas.*"
         )
 
     # Cek apakah brand hasil prediksi masuk dalam daftar rekomendasi utama
@@ -408,7 +417,7 @@ with tab1:
     
     # Query khusus untuk brand prediksi
     with st.spinner(f"Mencari mobil terbaik {pred_make}..."):
-        brand_result_df, _, _ = get_recommendations(
+        brand_result_df, _, _, _ = get_recommendations(
             prefs, scaler, encoders, df_enc,
             classifier=None, regressor=None,
             n_recommendations=3,

@@ -92,7 +92,7 @@ def get_recommendations(
     drive_wheels_filter: str = None,
     max_price: float = None,
     make_filter: str = None,
-) -> pd.DataFrame:
+) -> tuple:
     """
     Rekomendasikan mobil berdasarkan preferensi user.
 
@@ -114,7 +114,11 @@ def get_recommendations(
 
     Returns
     -------
-    pd.DataFrame  — Top-N rekomendasi mobil dengan similarity score
+    tuple: (pd.DataFrame, pred_make, pred_price, relaxed_filters)
+        - pd.DataFrame      — Top-N rekomendasi mobil dengan similarity score
+        - pred_make         — Prediksi merk (str atau None)
+        - pred_price        — Prediksi harga (float atau None)
+        - relaxed_filters   — List filter yang dilonggarkan (kosong jika semua filter terpenuhi)
     """
     # ── 1. Encode input user ──────────────────────────────────────────────────
     input_vec    = _encode_input(user_prefs, df_labeled, one_hot_cols)
@@ -138,32 +142,70 @@ def get_recommendations(
         pred_price = float(regressor.predict(input_scaled)[0])
         print(f"[PREDICT] Estimasi harga: ${pred_price:,.0f}")
 
-    # ── 3. Terapkan filter pada dataset ──────────────────────────────────────
-    df_f = df_labeled.copy()
+    # ── 3. Terapkan filter pada dataset dengan relaksasi bertahap ─────────────
+    relaxed_filters = []  # Catat filter yang dilonggarkan
+
+    def _apply_filters(df_base, trans_f, dw_f, bs_f, ft_f, price_f):
+        """Terapkan semua filter aktif ke df_base."""
+        df_tmp = df_base.copy()
+        if bs_f:
+            df_tmp = df_tmp[df_tmp["body-style"] == bs_f]
+        if ft_f:
+            df_tmp = df_tmp[df_tmp["fuel-type"] == ft_f]
+        if trans_f:
+            df_tmp = df_tmp[df_tmp["transmission"] == trans_f]
+        if dw_f:
+            df_tmp = df_tmp[df_tmp["drive-wheels"] == dw_f]
+        if price_f is not None:
+            df_tmp = df_tmp[df_tmp["price"] <= price_f]
+        return df_tmp
+
+    df_base = df_labeled.copy()
     if make_filter:
-        df_f = df_f[df_f["make"].str.lower() == make_filter.lower()]
+        df_base = df_base[df_base["make"].str.lower() == make_filter.lower()]
 
-    df_brand_baseline = df_f.copy()
+    # Coba filter lengkap dulu
+    df_f = _apply_filters(df_base, transmission_filter, drive_wheels_filter,
+                          body_style_filter, fuel_type_filter, max_price)
 
-    if body_style_filter:
-        df_f = df_f[df_f["body-style"] == body_style_filter]
-    if fuel_type_filter:
-        df_f = df_f[df_f["fuel-type"] == fuel_type_filter]
-    if transmission_filter:
-        df_f = df_f[df_f["transmission"] == transmission_filter]
-    if drive_wheels_filter:
-        df_f = df_f[df_f["drive-wheels"] == drive_wheels_filter]
-    if max_price is not None:
-        df_f = df_f[df_f["price"] <= max_price]
+    # ── Relaksasi bertahap jika tidak ada hasil ────────────────────────────────
+    # Urutan relaksasi: transmisi → penggerak roda → bodi → bbm → budget
+    active_trans = transmission_filter
+    active_dw    = drive_wheels_filter
+    active_bs    = body_style_filter
+    active_ft    = fuel_type_filter
+    active_price = max_price
+
+    if len(df_f) == 0 and active_trans:
+        relaxed_filters.append(f"Transmisi ({active_trans})")
+        active_trans = None
+        df_f = _apply_filters(df_base, active_trans, active_dw, active_bs, active_ft, active_price)
+
+    if len(df_f) == 0 and active_dw:
+        relaxed_filters.append(f"Penggerak Roda ({active_dw})")
+        active_dw = None
+        df_f = _apply_filters(df_base, active_trans, active_dw, active_bs, active_ft, active_price)
+
+    if len(df_f) == 0 and active_bs:
+        relaxed_filters.append(f"Tipe Bodi ({active_bs})")
+        active_bs = None
+        df_f = _apply_filters(df_base, active_trans, active_dw, active_bs, active_ft, active_price)
+
+    if len(df_f) == 0 and active_ft:
+        relaxed_filters.append(f"Tipe BBM ({active_ft})")
+        active_ft = None
+        df_f = _apply_filters(df_base, active_trans, active_dw, active_bs, active_ft, active_price)
+
+    if len(df_f) == 0 and active_price is not None:
+        relaxed_filters.append(f"Budget Maksimal (${active_price:,.0f})")
+        active_price = None
+        df_f = _apply_filters(df_base, active_trans, active_dw, active_bs, active_ft, active_price)
 
     if len(df_f) == 0:
-        print("[WARN] Filter terlalu ketat, tidak ada data — reset filter.")
+        # Last resort: abaikan semua filter kecuali make_filter
+        print("[WARN] Semua filter dilonggarkan, tidak ada data — pakai baseline.")
         if make_filter:
-            df_f = df_brand_baseline.copy()
-            if max_price is not None:
-                df_f_price = df_f[df_f["price"] <= max_price]
-                if len(df_f_price) > 0:
-                    df_f = df_f_price
+            df_f = df_base.copy()
         else:
             df_f = df_labeled.copy()
 
@@ -237,4 +279,4 @@ def get_recommendations(
         .reset_index(drop=True)
     )
 
-    return result_df, pred_make, pred_price
+    return result_df, pred_make, pred_price, relaxed_filters
