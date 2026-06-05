@@ -206,13 +206,20 @@ def get_recommendations(
 
     # ── 5. Susun hasil ─────────────────────────────────────────────────────────
     results = []
-    for dist, idx in zip(distances[0], indices[0]):
+    dist_arr = distances[0]
+    # Rescale similarity agar lebih bermakna dan informatif di UI:
+    # cosine distance biasanya sangat kecil (0.001 - 0.1) setelah StandardScaler,
+    # sehingga rumus lama (cos+1)/2 selalu ~100%.
+    # Solusi: normalisasi terhadap rentang distance aktual dalam hasil ini.
+    d_min = dist_arr.min()
+    d_max = dist_arr.max() if dist_arr.max() > dist_arr.min() else d_min + 1e-9
+    for dist, idx in zip(dist_arr, indices[0]):
         row = df_f.iloc[idx].copy()
-        cos_theta = float(1.0 - dist)
-        baseline_sim = float((cos_theta + 1.0) / 2.0 * 100)
-        
-        final_sim = min(100.0, max(0.0, baseline_sim))
-        row["similarity (%)"] = round(final_sim, 2)
+        # Semakin kecil distance → semakin tinggi similarity
+        # Normalisasi: 100% untuk distance terkecil, turun ke ~50% untuk distance terbesar
+        normalized = 1.0 - (dist - d_min) / (d_max - d_min)  # range [0, 1]
+        final_sim   = round(50.0 + normalized * 50.0, 1)       # range [50%, 100%]
+        row["similarity (%)"] = final_sim
         results.append(row)
 
     result_df = pd.DataFrame(results)
