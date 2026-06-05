@@ -2,10 +2,9 @@
 train_model.py
 ==============
 Training model untuk Car Recommendation System:
-- Random Forest Classifier  : prediksi merk mobil
-- Gradient Boosting Classifier: model pembanding
-- Random Forest Regressor   : estimasi harga
-- KNN (NearestNeighbors)    : content-based recommendation
+- Random Forest Classifier  : prediksi merk mobil (multi-class, 48 kelas)
+- Random Forest Regressor   : estimasi harga (MSRP)
+- KNN (NearestNeighbors)    : content-based recommendation (cosine similarity)
 """
 
 import os
@@ -94,7 +93,6 @@ def train_brand_classifier(X_train, y_train, cv: int = 5):
     print(f"[CV]  F1-Weighted (data asli): {cv_scores.round(4)} | mean={cv_scores.mean():.4f}")
 
     # ─── Fit final pada data OVERSAMPLED ──────────────────────────────────────
-    safe  = _safe_cv(y_res, cv)
     model.fit(X_res, y_res)
     print("[TRAIN] Selesai!")
     return model, cv_scores
@@ -112,7 +110,8 @@ def train_price_regressor(X_train, y_price_train, cv: int = 5):
     X_arr = np.asarray(X_train, dtype=float)
     y_arr = np.asarray(y_price_train, dtype=float)
 
-    cv_scores = cross_val_score(model, X_arr, y_arr, cv=cv, scoring="r2")
+    safe_cv = max(2, min(cv, len(X_arr)))  # guard: CV fold tidak melebihi jumlah sampel
+    cv_scores = cross_val_score(model, X_arr, y_arr, cv=safe_cv, scoring="r2")
     print(f"[CV]  R2: {cv_scores.round(4)} | mean={cv_scores.mean():.4f}")
     model.fit(X_arr, y_arr)
     print("[TRAIN] Selesai!")
