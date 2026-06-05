@@ -24,7 +24,7 @@ MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mod
 DISPLAY_COLS = [
     "make", "make_display", "model", "year", "body-style", "fuel-type",
     "transmission", "drive-wheels", "num-of-doors", "horsepower",
-    "cylinders", "city-mpg", "highway-mpg", "popularity", "price",
+    "city-mpg", "highway-mpg", "popularity", "price",
     "price_segment", "similarity (%)"
 ]
 

@@ -232,7 +232,6 @@ with st.sidebar:
     max_price   = st.number_input("Budget Maksimal ($)", min_value=2000, max_value=2500000, value=40000, step=1000)
     horsepower  = st.slider("Tenaga (HP)", 50, 1050, 200, 10)
     city_mpg    = st.slider("Konsumsi BBM Kota (mpg)", 5, 140, 25, 1)
-    cylinders   = st.slider("Jumlah Silinder", 0, 16, 4, 1)
 
     st.markdown("---")
     recommend_btn = st.button("Cari Rekomendasi", key="rec_btn")
@@ -258,10 +257,10 @@ with tab1:
     prefs = {
         "horsepower":  float(horsepower),
         "city-mpg":    float(city_mpg),
-        "cylinders":   float(cylinders),
         "price":       float(max_price),
-        # highway-mpg TIDAK dimasukkan ke prefs — sudah dihapus dari NUMERIC_FEATURES
-        # karena multikolinearitas tinggi dengan city-mpg (r ≈ 0.89)
+        # highway-mpg & cylinders TIDAK dimasukkan ke prefs — sudah dihapus dari NUMERIC_FEATURES
+        # highway-mpg: multikolinearitas tinggi dengan city-mpg (r ≈ 0.89)
+        # cylinders: multikolinearitas tinggi dengan horsepower (r ≈ 0.85)
     }
     if body_style != "(Semua)":
         prefs["body-style"] = body_style
@@ -358,7 +357,7 @@ with tab1:
         with st.expander("💡 Kenapa merk paling cocok (Prediksi) berbeda dengan daftar rekomendasi?", expanded=True):
             st.markdown(f"""
             **Analisis Penyelarasan Model:**
-            - Model **Brand Classifier (Random Forest)** menyimpulkan bahwa spesifikasi umum Anda (Tenaga **{horsepower:.0f} HP**, Silinder **{cylinders:.0f}**, Budget **${max_price:,.0f}**) secara historis paling mencerminkan brand **{pred_make.upper()}**.
+            - Model **Brand Classifier (Random Forest)** menyimpulkan bahwa spesifikasi umum Anda (Tenaga **{horsepower:.0f} HP**, Budget **${max_price:,.0f}**) secara historis paling mencerminkan brand **{pred_make.upper()}**.
             - Namun, Anda juga mengaktifkan filter spesifik pada panel kontrol (seperti Bodi: **{body_style}**, BBM: **{fuel_type}**, Penggerak Roda: **{drive_wheels}**, Transmisi: **{transmission}**).
             - Karena **{pred_make.upper()}** tidak memiliki mobil yang memenuhi seluruh filter spesifik tersebut secara sempurna (atau model yang ada memiliki kemiripan spesifikasi yang lebih rendah), sistem rekomendasi **KNN** memprioritaskan merk lain yang fiturnya cocok secara persis (seperti yang ditunjukkan pada daftar rekomendasi di bawah).
             - *Tips: Cobalah untuk mengatur filter bodi/penggerak roda ke **(Semua)** atau turunkan tingkat ke-spesifik-an filter untuk menyelaraskan kedua model.*
@@ -462,7 +461,8 @@ with tab1:
 
     # Gunakan hanya fitur yang benar-benar digunakan model (NUMERIC_FEATURES)
     # highway-mpg & popularity sudah dikeluarkan (multikolinearitas & target leakage)
-    radar_feats = ["horsepower", "city-mpg", "cylinders", "year", "num-of-doors"]
+    # cylinders sudah dikeluarkan (multikolinearitas tinggi dengan horsepower)
+    radar_feats = ["horsepower", "city-mpg", "year", "num-of-doors"]
 
     def norm_val(col, val):
         lo, hi = df_enc[col].min(), df_enc[col].max()
@@ -499,14 +499,14 @@ with tab1:
     # Tabel detail
     st.markdown("#### Tabel Detail Rekomendasi")
     show_cols = ["make_display", "model", "year", "body-style", "fuel-type", "transmission", "drive-wheels",
-                 "horsepower", "cylinders", "city-mpg", "price", "price_segment", "similarity (%)"]
+                 "horsepower", "city-mpg", "price", "price_segment", "similarity (%)"]
     show_cols = [c for c in show_cols if c in result_df.columns]
     
     st.dataframe(
         result_df[show_cols].rename(columns={
             "make_display": "Merk", "model": "Model", "year": "Tahun", "body-style": "Bodi",
             "fuel-type": "BBM", "transmission": "Transmisi", "drive-wheels": "Penggerak",
-            "horsepower": "HP", "cylinders": "Silinder", "city-mpg": "MPG Kota",
+            "horsepower": "HP", "city-mpg": "MPG Kota",
             "price": "Harga ($)", "price_segment": "Segmen", "similarity (%)": "Kemiripan (%)"
         }),
         use_container_width=True, hide_index=True
@@ -759,6 +759,9 @@ with tab3:
   Redundan karena mengukur hal yang sama (efisiensi BBM).
   Tetap tersedia di dataset untuk tampilan/filter.
 
+- **`cylinders`** — Korelasi sangat tinggi dengan `horsepower` (~0.85).
+  Informasi yang sama dikodekan dua kali → distorsi model.
+
 - **`popularity`** — Nilai konstan per merk (make).
   Menyebabkan *target leakage* → akurasi model palsu 99%+.
         """)
@@ -768,7 +771,6 @@ with tab3:
 
 - **`year`** — Tahun produksi
 - **`horsepower`** — Tenaga mesin (HP)
-- **`cylinders`** — Jumlah silinder mesin
 - **`num-of-doors`** — Jumlah pintu
 - **`city-mpg`** — Konsumsi BBM kota (mewakili efisiensi)
 - **+ Fitur kategorik** (body-style, fuel-type, transmission, drive-wheels, vehicle-size)
@@ -807,10 +809,12 @@ with tab4:
         | Kelompok | Fitur |
         |---|---|
         | **Identitas** | make (merk), model (model), year (tahun) |
-        | **Mesin** | horsepower (tenaga), cylinders (jumlah silinder), fuel-type (BBM) |
-        | **Konsumsi** | city-mpg, highway-mpg |
+        | **Mesin** | horsepower (tenaga), cylinders* (info saja), fuel-type (BBM) |
+        | **Konsumsi** | city-mpg, highway-mpg* |
         | **Bodi & Transmisi** | body-style, transmission, drive-wheels, num-of-doors, vehicle-size |
         | **Harga** | price (MSRP - target regresi) |
+
+        *\*cylinders & highway-mpg tersedia di dataset namun tidak digunakan sebagai fitur input model (multikolinearitas)*
         """)
     with c_b:
         st.markdown("""

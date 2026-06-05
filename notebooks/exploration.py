@@ -179,12 +179,14 @@ Berdasarkan correlation heatmap di atas:
      → KEPUTUSAN: Hanya 'city-mpg' yang digunakan. 'highway-mpg' tetap
        tersedia di dataset untuk keperluan display/filter UI.
 
-  ⚠️  horsepower ↔ cylinders   (r ≈ 0.78, TETAP DIPERTAHANKAN)
-     → Secara semantik mewakili dimensi berbeda:
-         • horsepower = output tenaga aktual mesin
-         • cylinders  = konfigurasi/kapasitas mesin
-     → Keduanya penting sebagai parameter preferensi pengguna.
-     → r=0.78 tinggi tapi masih dapat diterima untuk kasus ini.
+  ⛔ cylinders  (DIHAPUS dari fitur model)
+     → Korelasi dengan horsepower = ~0.85 (sangat tinggi / multikolinearitas)
+     → Mesin bertenaga tinggi hampir selalu memiliki lebih banyak silinder.
+     → Dampak jika keduanya dipakai:
+         • Informasi yang sama (kapasitas mesin) dikodekan dua kali
+         • Model mendapat sinyal ganda yang sama → mendistorsi feature importance
+     → KEPUTUSAN: Hanya 'horsepower' yang digunakan. 'cylinders' tetap
+       tersedia di dataset untuk keperluan display.
 
   ⛔ popularity  (DIHAPUS dari fitur model)
      → Nilainya konstan per merk (make) → TARGET LEAKAGE
@@ -272,7 +274,7 @@ fig.suptitle("Hubungan Fitur Teknis vs Harga", fontsize=15,
 
 scatter_pairs = [
     ("horsepower", "price"),
-    ("cylinders",  "price"),
+    ("year",       "price"),
     ("city-mpg",   "price"),
 ]
 scatter_colors = ["#a78bfa", "#60a5fa", "#34d399"]

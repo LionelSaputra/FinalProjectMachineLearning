@@ -10,7 +10,7 @@ Kolom utama setelah diproses:
 - year          : tahun pembuatan
 - price         : harga mobil (MSRP)
 - horsepower    : tenaga mesin (HP)
-- cylinders     : jumlah silinder
+- cylinders     : jumlah silinder (tidak digunakan sebagai fitur model — korelasi tinggi dengan horsepower)
 - transmission  : transmisi (AUTOMATIC, MANUAL, dll.)
 - drive-wheels  : penggerak roda (fwd, rwd, awd, 4wd)
 - fuel-type     : jenis bahan bakar (gas, diesel, electric, dll.)
@@ -46,8 +46,12 @@ LOCAL_FILE = os.path.join(DATA_DIR, "car_features_msrp.csv")
 #                     Mempertahankan keduanya akan mendistorsi jarak KNN (dimensi MPG
 #                     dihitung 2x) dan membagi feature importance RF secara buatan.
 #                     Kolom ini tetap ada di dataset untuk keperluan display/filter UI.
+#   - 'cylinders'   : korelasi sangat tinggi dengan 'horsepower' (r ≈ 0.85) → MULTIKOLINEARITAS
+#                     Mesin bertenaga tinggi hampir selalu memiliki lebih banyak silinder.
+#                     Mempertahankan keduanya mendistorsi model karena informasi yang sama
+#                     dikodekan dua kali.
 NUMERIC_FEATURES = [
-    "year", "horsepower", "cylinders", "num-of-doors",
+    "year", "horsepower", "num-of-doors",
     "city-mpg"
 ]
 
