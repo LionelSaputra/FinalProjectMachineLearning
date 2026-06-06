@@ -3,6 +3,10 @@
 > **Final Project Machine Learning** — Edmunds/Kaggle Car Features & MSRP Dataset  
 > Sistem rekomendasi mobil cerdas berbasis *content-based filtering* menggunakan algoritma Machine Learning klasik (non-deep learning) dengan prediksi merk terpopuler dan estimasi harga jual (MSRP).
 
+### 👥 Tim Pengembang
+* **Lionel Saputra Rusli** - 2802400780
+* **Harris Kristanto** - 2802412515
+
 ---
 
 ## 📊 Dataset
@@ -11,6 +15,23 @@
 * **Jumlah Sampel**: 11.914 mobil
 * **Rentang Tahun**: 1990 s.d. 2017
 * **Jumlah Merk**: 48 merk unik (Toyota, Honda, BMW, Chevrolet, Ferrari, Tesla, dll.)
+
+---
+
+## 🧹 Tahap Preprocessing Data
+
+Sebelum data digunakan untuk melatih model Machine Learning, dilakukan serangkaian preprocessing berikut:
+1. **Cleaning Kolom Kategorikal**: Menyederhanakan kategori tipe bahan bakar (`fuel-type`), penggerak roda (`drive-wheels`), dan bentuk bodi (`body-style`) agar tidak terlalu banyak kategori yang jarang.
+2. **Imputasi Nilai Kosong (Missing Values)**:
+   * Kolom numerik diimputasi menggunakan nilai **Median** dari masing-masing kolom.
+   * Kolom kategorik diimputasi menggunakan nilai **Mode** (nilai terbanyak).
+3. **Penyelesaian Multikolinearitas (Fitur Redundan)**:
+   * Menghapus `highway-mpg` karena memiliki korelasi sangat tinggi ($r \approx 0.89$) dengan `city-mpg`.
+   * Menghapus `cylinders` karena memiliki korelasi sangat tinggi ($r \approx 0.85$) dengan `horsepower`.
+4. **Pencegahan Target Leakage**: Menghapus `popularity` dari dataset training karena nilai kepopuleran bersifat konstan per merk, yang menyebabkan model klasifikasi merk mengalami kebocoran data (mencapai akurasi palsu 99%+).
+5. **One-Hot Encoding**: Mengubah data kategorikal menjadi representasi numerik biner (one-hot).
+6. **Feature Scaling (Standard Scaling)**: Melakukan penskalaan standardisasi (`StandardScaler`) hanya pada data training untuk mencegah *data leakage*, kemudian menerapkannya pada data pengujian.
+7. **Random Oversampling**: Menerapkan *oversampling* acak menggunakan NumPy pada data training untuk mengatasi masalah *class imbalance* yang parah pada kolom target `make` (merk mobil), dengan batas maksimal `max_total=15000` baris data.
 
 ---
 

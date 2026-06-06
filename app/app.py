@@ -997,6 +997,22 @@ with tab4:
 
         ---
 
+        ### 🧹 Tahap Preprocessing Data
+        Sebelum data digunakan untuk melatih model Machine Learning, beberapa tahap pembersihan dan penyiapan data (preprocessing) dilakukan:
+        1. **Pembersihan Fitur Kategorik**: Menyederhanakan kategori pada jenis bahan bakar (`fuel-type`), penggerak roda (`drive-wheels`), dan gaya bodi (`body-style`) menjadi kategori standar.
+        2. **Imputasi Missing Value**: 
+           - Kolom numerik diimputasi menggunakan nilai **Median** untuk menghindari distorsi akibat pencilan.
+           - Kolom kategorik diimputasi menggunakan nilai **Mode** (nilai terbanyak).
+        3. **Penghapusan Kolom Redundan (Multikolinearitas)**: 
+           - `highway-mpg` dihapus karena berkorelasi sangat tinggi ($r \\approx 0.89$) dengan `city-mpg`.
+           - `cylinders` dihapus karena berkorelasi sangat tinggi ($r \\approx 0.85$) dengan `horsepower`.
+        4. **Pencegahan Target Leakage**: Kolom `popularity` dihapus karena nilainya konstan per merk, yang menyebabkan overfitting/kebocoran target pada klasifikasi merk.
+        5. **One-Hot Encoding**: Mengubah fitur kategorikal menjadi representasi biner agar dapat dibaca oleh algoritma ML.
+        6. **Standard Scaling**: Menggunakan `StandardScaler` untuk menyamakan skala seluruh fitur numerik dan one-hot. Penskalaan hanya di-*fit* pada data training untuk menghindari *data leakage*.
+        7. **Random Oversampling**: Menggunakan numpy untuk menduplikasi sampel merk mobil minoritas secara acak (maksimal 15.000 total baris data) guna mengatasi *class imbalance* parah pada prediksi merk mobil.
+
+        ---
+
         ### Model ML yang Digunakan
 
         | Model / Teknik | Tugas | Metrik |
@@ -1022,6 +1038,12 @@ with tab4:
         """)
     with c_b:
         st.markdown("""
+        ### 👥 Tim Pengembang
+        * **Lionel Saputra Rusli** (NIM: 2802400780)
+        * **Harris Kristanto** (NIM: 2802412515)
+
+        ---
+
         ### 48 Merk Mobil Terdaftar
         Beberapa merk yang terdapat dalam dataset ini meliputi:
         * Toyota, Honda, Nissan, Mazda, Mitsubishi, Subaru
@@ -1032,7 +1054,7 @@ with tab4:
 
         ---
 
-        **Stack:**
+        **Stack Teknologi:**
         - Python 3.x + scikit-learn
         - Streamlit + Plotly
         - Pandas / NumPy
