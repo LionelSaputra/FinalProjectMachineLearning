@@ -990,6 +990,13 @@ with tab4:
     c_a, c_b = st.columns([1.6, 1])
     with c_a:
         st.markdown("""
+        ### 📝 Pernyataan Masalah (Problem Statement)
+        Munculnya berbagai variasi mobil membuat konsumen mengalami kebingungan dalam memilih tipe mobil yang cocok dengan preferensi mereka. Selain itu, spesifikasi mobil juga harus dipertimbangkan sebelum membeli mobil. Proses riset manual dengan mengunjungi puluhan website dapat memakan banyak waktu.
+        
+        Untuk mengatasi masalah ini, aplikasi **"Car Recommendation System"** dikembangkan untuk membantu calon pembeli menemukan mobil yang sesuai dengan preferensi mereka secara cerdas dan cepat.
+
+        ---
+
         ### Edmunds / Kaggle Car Features & MSRP Dataset
  
         Dataset ini berisi spesifikasi teknis dan MSRP (harga pabrikan) mobil yang dijual di Amerika Serikat dari tahun **1990 hingga 2017**.

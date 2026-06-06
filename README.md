@@ -9,6 +9,14 @@
 
 ---
 
+## 📝 Pernyataan Masalah (Problem Statement)
+
+Munculnya berbagai variasi mobil membuat konsumen mengalami kebingungan dalam memilih tipe mobil yang cocok dengan preferensi mereka. Selain itu, spesifikasi mobil juga harus dipertimbangankan sebelum membeli mobil. Proses riset manual dengan mengunjungi puluhan website dapat memakan banyak waktu.
+
+Untuk mengatasi masalah ini, aplikasi **"Car Recommendation System"** dikembangkan untuk membantu calon pembeli menemukan mobil yang sesuai dengan preferensi mereka.
+
+---
+
 ## 📊 Dataset
 
 **[Kaggle Car Features and MSRP Dataset](https://www.kaggle.com/datasets/CooperUnion/cardataset)**
