@@ -125,6 +125,22 @@ Final Project ML/
 
 ---
 
+## ⚠️ Batasan Sistem (Limitations)
+
+Meskipun demikian, aplikasi ini masih memiliki beberapa batasan:
+* **Pasar Indonesia**: Beberapa brand mobil yang ditampilkan belum tentu dipasarkan secara resmi di Indonesia.
+* **Akurasi Harga Real-Time**: Sistem mengambil data dari harga eceran produsen (MSRP) saat model dilatih/diperbarui. Sistem tidak dapat menjamin harga real-time terkait diskon dealer lokal atau negosiasi spesifik.
+* **Batasan Tahun**: Dataset yang digunakan hanya mencakup data mobil dari tahun **1990 hingga 2017**.
+
+---
+
+## 🔮 Rencana Pengembangan (Future Works)
+
+* **Pembaruan Tahun**: Memperbarui dataset ke tahun **2018–2025** (termasuk kendaraan listrik/EV modern seperti Tesla, BYD, Hyundai Ioniq, dll.).
+* **Adaptasi Pasar Lokal**: Menambahkan data mobil spesifik pasar Indonesia (seperti Avanza, Brio, Xpander, dll.) untuk relevansi lokal yang lebih baik.
+
+---
+
 ## 📚 Referensi
 
 * Cooper Union. *Car Features and MSRP Dataset on Kaggle.*
